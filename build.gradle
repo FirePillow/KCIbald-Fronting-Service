@@ -1,0 +1,46 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'org.jetbrains.kotlin.jvm' version "1.3.21"
+}
+
+group 'com.kcibald'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+}
+
+sourceCompatibility = 12
+
+def vertxVersion = "3.6.3"
+def junitVersion = "5.4.0"
+
+dependencies {
+
+//    logging
+    compile 'ch.qos.logback:logback-classic:1.3.0-alpha4'
+
+//    core vertx dependency
+    implementation "io.vertx:vertx-core:$vertxVersion"
+    testImplementation "io.vertx:vertx-junit5:$vertxVersion"
+
+    compile 'io.vertx:vertx-lang-kotlin-coroutines:3.6.3'
+
+//    kotlin language dependency
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.1'
+
+    compile 'com.github.uchuhimo:konf:master-SNAPSHOT'
+
+//    test framework
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
