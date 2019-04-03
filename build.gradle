@@ -13,7 +13,7 @@ repositories {
     jcenter()
 }
 
-def vertxVersion = "3.6.3"
+def vertxVersion = "3.7.0"
 def junitVersion = "5.4.0"
 
 dependencies {
