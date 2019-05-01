@@ -13,8 +13,8 @@ repositories {
     jcenter()
 }
 
-def vertxVersion = "3.6.3"
-def junitVersion = "5.4.0"
+def vertxVersion = "3.7.0"
+def junitVersion = "5.4.2"
 
 dependencies {
 
@@ -37,7 +37,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.1'
 
-    compile 'com.uchuhimo:konf:0.13.1'
+    compile 'com.uchuhimo:konf:0.13.2'
 
 //    test framework
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
