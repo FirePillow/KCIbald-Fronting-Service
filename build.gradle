@@ -30,6 +30,8 @@ dependencies {
 
     compile group: 'commons-validator', name: 'commons-validator', version: '1.6'
 
+    compile "io.vertx:vertx-auth-common:$vertxVersion"
+
     compile "io.vertx:vertx-lang-kotlin:$vertxVersion"
     compile "io.vertx:vertx-lang-kotlin-coroutines:$vertxVersion"
 

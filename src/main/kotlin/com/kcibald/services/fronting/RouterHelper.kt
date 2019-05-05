@@ -1,30 +1,26 @@
+@file:Suppress("NOTHING_TO_INLINE")
+
 package com.kcibald.services.fronting
 
 import com.kcibald.services.fronting.objs.BadRequestResponse
-import com.kcibald.services.fronting.objs.fail
+import com.kcibald.services.fronting.objs.responseWith
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Route
-import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.handler.BodyHandler
+import io.vertx.ext.web.handler.CookieHandler
 
-object RouterHelper {
-    fun routes(router: Router) {
-        router.errorHandler(400) {
+object RouterHelper
 
-        }
-    }
-}
+const val JSON_CONTEXT_KEY = "_json_parsed"
 
-private const val JSON_CONTEXT_KEY = "_json_parsed"
-
-fun Route.checkJsonIntegrity() = handler {
+inline fun Route.checkJsonIntegrity() = handler {
     val result = runCatching {
         it.bodyAsJson
     }
     if (result.isFailure) {
 //            TODO: log
-        it.fail(BadRequestResponse)
+        it.responseWith(BadRequestResponse)
     } else {
         it.put(JSON_CONTEXT_KEY, result.getOrNull())
         it.next()
@@ -32,12 +28,23 @@ fun Route.checkJsonIntegrity() = handler {
 }!!
 
 //    let it fail if checked json is not present, it should fail in integration test
-val RoutingContext.jsonObject: JsonObject
+inline val RoutingContext.jsonObject: JsonObject
     get() = this[JSON_CONTEXT_KEY]!!
 
-fun Route.consumeJson(): Route {
+inline fun Route.consumeJson(): Route {
     this.consumes(ContentTypes.JSON)
     this.handler(BodyHandler.create(false))
     this.checkJsonIntegrity()
     return this
+}
+
+private val cookieHandler = CookieHandler.create()
+
+fun Route.authenticated(): Route {
+    this.handler(cookieHandler::handle)
+//    TODO: Session store
+//    TODO: Session handler
+//    TODO: RedirectAuthHandler
+//    TODO: Auth provider
+    TODO()
 }

@@ -2,6 +2,8 @@ package com.kcibald.services.fronting.controllers.common
 
 import com.kcibald.services.fronting.*
 import com.kcibald.services.fronting.objs.*
+import io.vertx.core.Vertx
+import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import io.vertx.kotlin.core.json.get
@@ -12,20 +14,16 @@ import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.util.regex.Pattern
 
-object Login : StaticHTMLContentEntry, APIEntry {
+object Login : StaticHTMLContentEntry(), FancyEntry {
     private val logger = LoggerFactory.getLogger(Login::class.java)
     private val recaptchaScoreThreshold: Double = 0.7
 
-    override fun getAPISubRouter(): Router {
-        val router = Router.router(EXEC_VERTICLE)
+    override fun getAPISubRouter(vertx: Vertx): Router {
+        val router = Router.router(vertx)
         router
             .post("/login")
             .consumeJson()
             .coroutineCoreHandler(Login::loginAPI)
-
-        router
-            .post("/logout")
-            .coreHandler(Login::logoutAPI)
         return router
     }
 
@@ -74,6 +72,7 @@ object Login : StaticHTMLContentEntry, APIEntry {
                 }
             }
         }
+
 //        TODO: user verification magic
 //        TODO: cookie magic
 
@@ -85,15 +84,14 @@ object Login : StaticHTMLContentEntry, APIEntry {
         PASSWORD_OR_ACCOUNT_EMAIL_INCORRECT("PASSWORD_OR_ACCOUNT_EMAIL_INCORRECT"),
         CAPTCHA_VERIFICATION_FAILED("CAPTCHA_VERIFICATION_FAILED");
 
-        override fun apply(routingContext: RoutingContext) {
+        override fun apply(response: HttpServerResponse) {
             val body = json {
                 obj(
                     "success" to false,
                     "type" to type
                 )
             }
-            routingContext
-                .response()
+            response
                 .setStatusCode(401)
                 .putHeader("WWW-Authenticate", "FormBased")
                 .end(body)
@@ -102,12 +100,7 @@ object Login : StaticHTMLContentEntry, APIEntry {
 
     }
 
-    private fun logoutAPI(context: RoutingContext): Response {
-        TODO()
-    }
-
     override fun staticEntryPath(): List<Path> = listOf("/login")
-
 
 }
 
