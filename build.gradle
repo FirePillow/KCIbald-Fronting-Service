@@ -39,7 +39,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.1'
 
-    compile 'com.uchuhimo:konf:0.13.2'
+    compile 'com.uchuhimo:konf:0.13.3'
 
 //    test framework
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
