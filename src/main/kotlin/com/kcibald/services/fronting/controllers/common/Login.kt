@@ -1,11 +1,16 @@
 package com.kcibald.services.fronting.controllers.common
 
 import com.kcibald.services.fronting.*
-import com.kcibald.services.fronting.objs.*
-import io.vertx.core.Vertx
+import com.kcibald.services.fronting.objs.entries.FancyEntry
+import com.kcibald.services.fronting.objs.entries.Path
+import com.kcibald.services.fronting.objs.entries.UnsafeHTMLContentEntry
+import com.kcibald.services.fronting.objs.responses.EmptyResponse
+import com.kcibald.services.fronting.objs.responses.Response
+import com.wusatosi.recaptcha.v3.RecaptchaV3Client
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
+import io.vertx.ext.web.handler.CookieHandler
 import io.vertx.kotlin.core.json.get
 import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.obj
@@ -14,17 +19,15 @@ import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.util.regex.Pattern
 
-object Login : StaticHTMLContentEntry(), FancyEntry {
+object Login : UnsafeHTMLContentEntry(), FancyEntry {
     private val logger = LoggerFactory.getLogger(Login::class.java)
     private val recaptchaScoreThreshold: Double = 0.7
 
-    override fun getAPISubRouter(vertx: Vertx): Router {
-        val router = Router.router(vertx)
+    override fun routeAPIEndpoint(router: Router) {
         router
             .post("/login")
             .consumeJson()
             .coroutineCoreHandler(Login::loginAPI)
-        return router
     }
 
     private val emailValidator = EmailValidator.getInstance()
@@ -45,6 +48,7 @@ object Login : StaticHTMLContentEntry(), FancyEntry {
         }
 
 //        might want to make recaptcha verification parell to account information processing
+        var unsafeLogin = false
         for (retryCount in 1..2) {
             try {
 //                it is not blocking call
@@ -69,6 +73,7 @@ object Login : StaticHTMLContentEntry(), FancyEntry {
                         "Recaptcha validation failure, retried $retryCount times, letting logging attempt $account though"
                     )
 //                    Might want to expire this session early (like... 5min)
+                    unsafeLogin = true
                 }
             }
         }

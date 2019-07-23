@@ -1,15 +1,8 @@
 package com.kcibald.services.fronting.controllers.common
 
-import com.kcibald.services.fronting.objs.APIEntry
-import com.kcibald.services.fronting.objs.GroupingRouter
-import com.kcibald.services.fronting.objs.HTMLContentEntry
+import com.kcibald.services.fronting.objs.entries.GroupingRouter
 
 object CommonAPIRouter : GroupingRouter(
-    "/",
-    listOf<APIEntry>(
-        Login
-    ),
-    listOf<HTMLContentEntry>(
-        Login
-    )
+    fancyEntry = listOf(Login),
+    apiEntries = listOf(Logout)
 )

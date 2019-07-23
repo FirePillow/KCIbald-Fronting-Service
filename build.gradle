@@ -28,9 +28,10 @@ dependencies {
 
     implementation 'com.github.wusatosi:kotlin-recaptcha-client:7b89048b41'
 
-    compile group: 'commons-validator', name: 'commons-validator', version: '1.6'
+    compile 'commons-validator:commons-validator:1.6'
 
     compile "io.vertx:vertx-auth-common:$vertxVersion"
+    compile "io.vertx:vertx-auth-jwt:$vertxVersion"
 
     compile "io.vertx:vertx-lang-kotlin:$vertxVersion"
     compile "io.vertx:vertx-lang-kotlin-coroutines:$vertxVersion"

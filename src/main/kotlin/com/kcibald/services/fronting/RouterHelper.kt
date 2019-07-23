@@ -2,8 +2,8 @@
 
 package com.kcibald.services.fronting
 
-import com.kcibald.services.fronting.objs.BadRequestResponse
-import com.kcibald.services.fronting.objs.responseWith
+import com.kcibald.services.fronting.objs.responses.BadRequestResponse
+import com.kcibald.services.fronting.objs.responses.Response
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Route
 import io.vertx.ext.web.RoutingContext
@@ -48,3 +48,7 @@ fun Route.authenticated(): Route {
 //    TODO: Auth provider
     TODO()
 }
+
+@Suppress("NOTHING_TO_INLINE")
+//for possible interpretation and better chaining
+inline fun RoutingContext.responseWith(_responses: Response) = _responses.apply(this.response())
