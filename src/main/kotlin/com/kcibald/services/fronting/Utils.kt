@@ -5,6 +5,7 @@ package com.kcibald.services.fronting
 import com.kcibald.services.fronting.objs.responses.BadRequestResponse
 import com.kcibald.services.fronting.objs.responses.InternalErrorResponse
 import com.kcibald.services.fronting.objs.responses.Response
+import com.wusatosi.recaptcha.v3.RecaptchaV3Client
 import io.vertx.core.Vertx
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.core.impl.NoStackTraceThrowable
