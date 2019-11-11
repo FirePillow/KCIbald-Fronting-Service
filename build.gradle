@@ -27,6 +27,7 @@ dependencies {
     testImplementation "io.vertx:vertx-junit5:$vertxVersion"
 
     implementation 'com.github.wusatosi:kotlin-recaptcha-client:7b89048b41'
+    implementation 'com.github.FirePillow:KCIbald-shared-obj:v1.0.0-alpha.2.1'
 
     compile 'commons-validator:commons-validator:1.6'
 
