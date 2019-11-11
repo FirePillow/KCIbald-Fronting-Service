@@ -1,6 +1,7 @@
 package com.kcibald.services.fronting.controllers.common
 
 import com.kcibald.services.fronting.*
+import com.kcibald.services.fronting.controllers.Config.Authentication
 import com.kcibald.services.fronting.objs.entries.FancyEntry
 import com.kcibald.services.fronting.objs.entries.Path
 import com.kcibald.services.fronting.objs.entries.UnsafeHTMLContentEntry
@@ -9,6 +10,7 @@ import com.kcibald.services.fronting.objs.responses.InternalErrorResponse
 import com.kcibald.services.fronting.objs.responses.Response
 import com.kcibald.services.user.AuthenticationClient
 import com.kcibald.services.user.AuthenticationResult
+import com.uchuhimo.konf.Config
 import io.vertx.core.Vertx
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.auth.jwt.JWTAuth
@@ -26,16 +28,24 @@ import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
+import kotlin.properties.Delegates
 
 object Login : UnsafeHTMLContentEntry(), FancyEntry {
     private val logger = LoggerFactory.getLogger(Login::class.java)
 
     //    should be imported from config or some sort
-    private val recaptchaScoreThreshold: Double = 0.7
-    private const val COOKIE_KEY = ""
-    private val authenticationClient = AuthenticationClient.createDefault(Vertx.vertx())
+    private var recaptchaScoreThreshold by Delegates.notNull<Double>()
+    private lateinit var COOKIE_KEY: String
+    private lateinit var authenticationClient: AuthenticationClient
+    private lateinit var jwtAuthProvider: JWTAuth
 
-    override fun routeAPIEndpoint(router: Router) {
+    override fun routeAPIEndpoint(router: Router, vertx: Vertx, configSource: Config) {
+        recaptchaScoreThreshold = configSource[Authentication.RecaptchaThreshold]
+        COOKIE_KEY = configSource[Authentication.CookieKey]
+
+        authenticationClient =  AuthenticationClient.createDefault(vertx)
+        jwtAuthProvider = JWTAuth.create(vertx, JWTAuthOptions())
+
         router
             .post("/login")
             .consumeJson()
@@ -44,7 +54,6 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
 
     private val emailValidator = EmailValidator.getInstance()
     private val passwordPattern = Pattern.compile("^(?=.*?[a-z])(?=.*?[0-9]).{8,20}\$")
-    private val jwtAuthProvider = JWTAuth.create(Vertx.vertx(), JWTAuthOptions())
 
     private suspend fun loginAPI(context: RoutingContext): Response {
         val requestObj = context.jsonObject
