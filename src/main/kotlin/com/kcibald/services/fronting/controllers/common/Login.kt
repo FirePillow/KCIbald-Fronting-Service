@@ -172,8 +172,6 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
                 .putHeader("WWW-Authenticate", "FormBased")
                 .end(body)
         }
-
-
     }
 
     override fun staticEntryPath(): List<Path> = listOf("/login")
