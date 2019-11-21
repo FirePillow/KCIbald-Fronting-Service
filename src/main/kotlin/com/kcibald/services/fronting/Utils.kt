@@ -69,7 +69,15 @@ private inline fun normalize(result: Result<Response>): Response {
     }
 }
 
-//TODO: json formatter config
-inline fun JsonObject.formatToString(): String = this.toString()
+inline fun JsonObject.formatToString(): String = this.encode()
 
-inline fun HttpServerResponse.end(body: JsonObject) = this.end(body.toString())
+inline fun HttpServerResponse.end(body: JsonObject) = this.end(body.formatToString())
+
+internal val RoutingContext.username: String
+    get() = this.user().principal().getString("username")
+
+internal val RoutingContext.userUrlKey: String
+    get() = this.user().principal().getString("url_key")
+
+internal val RoutingContext.avatarKey: String
+    get() = this.user().principal().getString("user_avatar")

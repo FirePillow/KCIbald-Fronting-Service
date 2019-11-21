@@ -2,13 +2,22 @@
 
 package com.kcibald.services.fronting
 
+import com.kcibald.services.fronting.handlers.AuthorizationHandler
 import com.kcibald.services.fronting.objs.responses.BadRequestResponse
+import com.kcibald.services.fronting.objs.responses.JsonResponse
+import com.kcibald.services.fronting.objs.responses.RedirectResponse
 import com.kcibald.services.fronting.objs.responses.Response
+import com.uchuhimo.konf.Config
+import io.vertx.core.http.HttpServerResponse
 import io.vertx.core.json.JsonObject
+import io.vertx.ext.auth.AuthProvider
+import io.vertx.ext.auth.jwt.JWTAuth
 import io.vertx.ext.web.Route
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.handler.BodyHandler
 import io.vertx.ext.web.handler.CookieHandler
+import io.vertx.ext.web.handler.JWTAuthHandler
+import io.vertx.kotlin.core.json.jsonObjectOf
 
 object RouterHelper
 
@@ -40,13 +49,21 @@ inline fun Route.consumeJson(): Route {
 
 private val cookieHandler = CookieHandler.create()
 
-fun Route.authenticated(): Route {
+private val authenticationRejectJson: JsonObject = jsonObjectOf(
+    "success" to false,
+    "type" to "AUTHORIZATION_MISSING_OR_INVALID"
+)
+
+object StandardAuthenticationRejectResponse {
+    val PAGE = RedirectResponse("/login")
+    val API = JsonResponse(authenticationRejectJson, 401)
+}
+
+fun Route.authenticated(rejectResponse: Response, config: Config, authProvider: JWTAuth): Route {
+    val authorizationHandler = AuthorizationHandler(rejectResponse, config, authProvider)
     this.handler(cookieHandler::handle)
-//    TODO: Session store
-//    TODO: Session handler
-//    TODO: RedirectAuthHandler
-//    TODO: Auth provider
-    TODO()
+    this.handler(authorizationHandler)
+    return this
 }
 
 @Suppress("NOTHING_TO_INLINE")
