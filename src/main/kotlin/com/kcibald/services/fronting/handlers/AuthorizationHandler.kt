@@ -1,6 +1,6 @@
 package com.kcibald.services.fronting.handlers
 
-import com.kcibald.services.fronting.controllers.Config.Authentication
+import com.kcibald.services.fronting.controllers.MasterConfigSpec.Authentication
 import com.kcibald.services.fronting.objs.responses.Response
 import com.kcibald.services.fronting.utils.responseWith
 import com.kcibald.services.fronting.utils.username

@@ -1,5 +1,6 @@
 package com.kcibald.services.fronting
 
+import com.kcibald.services.fronting.controllers.MasterConfigSpec
 import com.kcibald.services.fronting.controllers.common.CommonAPIRouter
 import com.kcibald.services.fronting.utils.SharedObjects
 import com.uchuhimo.konf.Config
@@ -13,7 +14,7 @@ import io.vertx.kotlin.coroutines.CoroutineVerticle
 object FrontingServiceVerticle : CoroutineVerticle() {
 
     override suspend fun start() {
-        val config = Config { addSpec(com.kcibald.services.fronting.controllers.Config) }
+        val config = Config { addSpec(MasterConfigSpec) }
             .from.json.resource("config.json")
 
         val shared = initializeBasicObjects(config)
@@ -22,7 +23,7 @@ object FrontingServiceVerticle : CoroutineVerticle() {
         CommonAPIRouter.routeAPIEndpoint(router, shared)
         CommonAPIRouter.routeHTMLContent(router, shared)
 
-        val port = config[com.kcibald.services.fronting.controllers.Config.httpPort]
+        val port = config[MasterConfigSpec.httpPort]
         vertx
             .createHttpServer()
             .requestHandler(router::handle)
@@ -32,14 +33,13 @@ object FrontingServiceVerticle : CoroutineVerticle() {
     }
 
     private fun initializeBasicObjects(config: Config): SharedObjects {
-        SharedObjects.createDefault(
+        return SharedObjects.createDefault(
             config,
             vertx,
 //            TODO: finish recaptcha Configuration and jwtAuth Configuration
             RecaptchaV3Client(""),
             JWTAuth.create(vertx, JWTAuthOptions())
         )
-        TODO()
     }
 
     override suspend fun stop() {

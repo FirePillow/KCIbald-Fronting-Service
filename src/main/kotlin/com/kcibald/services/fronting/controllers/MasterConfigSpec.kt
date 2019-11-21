@@ -2,7 +2,7 @@ package com.kcibald.services.fronting.controllers
 
 import com.uchuhimo.konf.ConfigSpec
 
-object Config: ConfigSpec() {
+object MasterConfigSpec: ConfigSpec("") {
     val httpPort by optional(8080, "http_port")
     object Authentication: ConfigSpec("authentication") {
         val CookieKey by optional("_kb_aut", "cookie_key")
