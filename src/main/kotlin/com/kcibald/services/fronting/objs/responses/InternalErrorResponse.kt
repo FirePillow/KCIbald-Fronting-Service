@@ -1,6 +1,6 @@
 package com.kcibald.services.fronting.objs.responses
 
-import com.kcibald.services.fronting.formatToString
+import com.kcibald.services.fronting.utils.formatToString
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.kotlin.core.json.json

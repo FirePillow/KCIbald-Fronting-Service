@@ -1,6 +1,6 @@
 @file:Suppress("NOTHING_TO_INLINE")
 
-package com.kcibald.services.fronting
+package com.kcibald.services.fronting.utils
 
 import com.kcibald.services.fronting.handlers.AuthorizationHandler
 import com.kcibald.services.fronting.objs.responses.BadRequestResponse
@@ -8,15 +8,12 @@ import com.kcibald.services.fronting.objs.responses.JsonResponse
 import com.kcibald.services.fronting.objs.responses.RedirectResponse
 import com.kcibald.services.fronting.objs.responses.Response
 import com.uchuhimo.konf.Config
-import io.vertx.core.http.HttpServerResponse
 import io.vertx.core.json.JsonObject
-import io.vertx.ext.auth.AuthProvider
 import io.vertx.ext.auth.jwt.JWTAuth
 import io.vertx.ext.web.Route
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.handler.BodyHandler
 import io.vertx.ext.web.handler.CookieHandler
-import io.vertx.ext.web.handler.JWTAuthHandler
 import io.vertx.kotlin.core.json.jsonObjectOf
 
 object RouterHelper

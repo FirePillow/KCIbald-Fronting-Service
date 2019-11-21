@@ -1,6 +1,6 @@
 @file:Suppress("NOTHING_TO_INLINE")
 
-package com.kcibald.services.fronting
+package com.kcibald.services.fronting.utils
 
 import com.kcibald.services.fronting.objs.responses.BadRequestResponse
 import com.kcibald.services.fronting.objs.responses.InternalErrorResponse

@@ -1,8 +1,8 @@
 package com.kcibald.services.fronting.objs.entries
 
-import com.kcibald.services.fronting.ContentTypes
-import com.kcibald.services.fronting.StandardAuthenticationRejectResponse
-import com.kcibald.services.fronting.authenticated
+import com.kcibald.services.fronting.utils.ContentTypes
+import com.kcibald.services.fronting.utils.StandardAuthenticationRejectResponse
+import com.kcibald.services.fronting.utils.authenticated
 import com.uchuhimo.konf.Config
 import io.vertx.core.Vertx
 import io.vertx.ext.auth.jwt.JWTAuth

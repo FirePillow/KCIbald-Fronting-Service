@@ -1,6 +1,6 @@
 package com.kcibald.services.fronting.objs.responses
 
-import com.kcibald.services.fronting.end
+import com.kcibald.services.fronting.utils.end
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.core.json.JsonObject
 

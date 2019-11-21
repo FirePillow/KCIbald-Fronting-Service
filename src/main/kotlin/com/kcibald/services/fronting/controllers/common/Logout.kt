@@ -1,12 +1,11 @@
 package com.kcibald.services.fronting.controllers.common
 
-import com.kcibald.services.fronting.ContentTypes
+import com.kcibald.services.fronting.utils.ContentTypes
 import com.kcibald.services.fronting.controllers.Config.Authentication
-import com.kcibald.services.fronting.coreHandler
+import com.kcibald.services.fronting.utils.coreHandler
 import com.kcibald.services.fronting.objs.entries.FancyEntry
 import com.kcibald.services.fronting.objs.responses.EmptyResponse
 import com.kcibald.services.fronting.objs.responses.RedirectResponse
-import com.kcibald.services.fronting.objs.responses.Response
 import com.uchuhimo.konf.Config
 import io.vertx.core.Vertx
 import io.vertx.ext.web.Cookie
