@@ -23,11 +23,8 @@ object ContentTypes {
     const val HTML = "text/html"
 }
 
-internal inline val EXEC_VERTX
-    get() = FrontingServiceVerticle.vertx
-
 internal inline fun launchVertxCorutinue(
-    vertxOverride: Vertx = EXEC_VERTX,
+    vertxOverride: Vertx,
     noinline block: suspend CoroutineScope.() -> Unit
 ) {
     GlobalScope.launch(vertxOverride.dispatcher(), block = block)
