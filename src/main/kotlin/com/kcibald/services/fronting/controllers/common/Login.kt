@@ -8,11 +8,9 @@ import com.kcibald.services.fronting.objs.responses.EmptyResponse
 import com.kcibald.services.fronting.objs.responses.InternalErrorResponse
 import com.kcibald.services.fronting.objs.responses.Response
 import com.kcibald.services.fronting.utils.*
-import com.kcibald.services.fronting.utils.RECAPTCHA
 import com.kcibald.services.user.AuthenticationClient
 import com.kcibald.services.user.AuthenticationResult
-import com.uchuhimo.konf.Config
-import io.vertx.core.Vertx
+import com.wusatosi.recaptcha.v3.RecaptchaV3Client
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.auth.jwt.JWTAuth
 import io.vertx.ext.auth.jwt.JWTAuthOptions
@@ -35,15 +33,19 @@ import kotlin.properties.Delegates
 object Login : UnsafeHTMLContentEntry(), FancyEntry {
     private val logger = LoggerFactory.getLogger(Login::class.java)
 
-    //    should be imported from config or some sort
     private var recaptchaScoreThreshold by Delegates.notNull<Double>()
     private lateinit var COOKIE_KEY: String
     private lateinit var authenticationClient: AuthenticationClient
     private lateinit var jwtAuthProvider: JWTAuth
+    private lateinit var recaptchaClient: RecaptchaV3Client
 
-    override fun routeAPIEndpoint(router: Router, vertx: Vertx, configSource: Config) {
-        recaptchaScoreThreshold = configSource[Authentication.RecaptchaThreshold]
-        COOKIE_KEY = configSource[Authentication.CookieKey]
+    override fun routeAPIEndpoint(router: Router, sharedObjects: SharedObjects) {
+        val vertx = sharedObjects.vertx
+        val config = sharedObjects.config
+        this.recaptchaClient = sharedObjects.recaptchaClient
+
+        recaptchaScoreThreshold = config[Authentication.RecaptchaThreshold]
+        COOKIE_KEY = config[Authentication.CookieKey]
 
         authenticationClient = AuthenticationClient.createDefault(vertx)
         jwtAuthProvider = JWTAuth.create(vertx, JWTAuthOptions())
@@ -78,7 +80,7 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
             try {
 //                it is not blocking call
                 @Suppress("BlockingMethodInNonBlockingContext")
-                val score = RECAPTCHA.getVerifyScore(recaptchaToken)
+                val score = recaptchaClient.getVerifyScore(recaptchaToken)
                 if (score < recaptchaScoreThreshold) {
                     logger.info(
                         "logging attempt by account $account denied because recaptcha score is under threshold" +

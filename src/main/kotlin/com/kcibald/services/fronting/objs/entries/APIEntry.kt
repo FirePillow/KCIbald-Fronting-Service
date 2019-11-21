@@ -1,9 +1,8 @@
 package com.kcibald.services.fronting.objs.entries
 
-import com.uchuhimo.konf.Config
-import io.vertx.core.Vertx
+import com.kcibald.services.fronting.utils.SharedObjects
 import io.vertx.ext.web.Router
 
 interface APIEntry {
-    fun routeAPIEndpoint(router: Router, vertx: Vertx, configSource: Config)
+    fun routeAPIEndpoint(router: Router, sharedObjects: SharedObjects)
 }

@@ -1,7 +1,6 @@
 package com.kcibald.services.fronting.objs.entries
 
-import com.uchuhimo.konf.Config
-import io.vertx.core.Vertx
+import com.kcibald.services.fronting.utils.SharedObjects
 import io.vertx.ext.web.Router
 
 abstract class GroupingRouter(
@@ -10,25 +9,25 @@ abstract class GroupingRouter(
     private val htmlEntries: List<HTMLContentEntry>? = null
 ) : FancyEntry {
 
-    override fun routeAPIEndpoint(router: Router, vertx: Vertx, configSource: Config) {
+    override fun routeAPIEndpoint(router: Router, sharedObjects: SharedObjects) {
         if (apiEntries != null)
             for (apiEntry in apiEntries) {
-                apiEntry.routeAPIEndpoint(router, vertx, configSource)
+                apiEntry.routeAPIEndpoint(router, sharedObjects)
             }
         if (fancyEntry != null)
             for (entry in fancyEntry) {
-                entry.routeAPIEndpoint(router, vertx, configSource)
+                entry.routeAPIEndpoint(router, sharedObjects)
             }
     }
 
-    override fun routeHTMLContent(router: Router, vertx: Vertx, configSource: Config) {
+    override fun routeHTMLContent(router: Router, sharedObjects: SharedObjects) {
         if (htmlEntries != null)
             for (htmlEntry in htmlEntries) {
-                htmlEntry.routeHTMLContent(router, vertx, configSource)
+                htmlEntry.routeHTMLContent(router, sharedObjects)
             }
         if (fancyEntry != null)
             for (entry in fancyEntry) {
-                entry.routeHTMLContent(router, vertx, configSource)
+                entry.routeHTMLContent(router, sharedObjects)
             }
     }
 

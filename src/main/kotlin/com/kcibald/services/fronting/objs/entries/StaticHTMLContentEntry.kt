@@ -1,11 +1,9 @@
 package com.kcibald.services.fronting.objs.entries
 
 import com.kcibald.services.fronting.utils.ContentTypes
+import com.kcibald.services.fronting.utils.SharedObjects
 import com.kcibald.services.fronting.utils.StandardAuthenticationRejectResponse
 import com.kcibald.services.fronting.utils.authenticated
-import com.uchuhimo.konf.Config
-import io.vertx.core.Vertx
-import io.vertx.ext.auth.jwt.JWTAuth
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.handler.StaticHandler
 
@@ -14,7 +12,7 @@ sealed class StaticHTMLContentEntry : HTMLContentEntry {
 }
 
 abstract class UnsafeHTMLContentEntry : StaticHTMLContentEntry() {
-    final override fun routeHTMLContent(router: Router, vertx: Vertx, configSource: Config) {
+    final override fun routeHTMLContent(router: Router, sharedObjects: SharedObjects) {
         for (p in staticEntryPath()) {
             router
                 .get(p)
@@ -24,16 +22,13 @@ abstract class UnsafeHTMLContentEntry : StaticHTMLContentEntry() {
     }
 }
 
-abstract class StandardStaticHTMLContentEntry(
-    private val jwtAuth: JWTAuth
-) : StaticHTMLContentEntry() {
-
-    final override fun routeHTMLContent(router: Router, vertx: Vertx, configSource: Config) {
+abstract class StandardStaticHTMLContentEntry : StaticHTMLContentEntry() {
+    final override fun routeHTMLContent(router: Router, sharedObjects: SharedObjects) {
         for (p in staticEntryPath()) {
             router
                 .get(p)
                 .produces(ContentTypes.HTML)
-                .authenticated(StandardAuthenticationRejectResponse.PAGE, configSource, jwtAuth)
+                .authenticated(StandardAuthenticationRejectResponse.PAGE, sharedObjects.config, sharedObjects.jwtAuth)
                 .handler(genericStaticHandler)
         }
     }

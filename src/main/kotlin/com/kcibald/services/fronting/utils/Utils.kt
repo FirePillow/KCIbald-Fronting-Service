@@ -5,7 +5,6 @@ package com.kcibald.services.fronting.utils
 import com.kcibald.services.fronting.objs.responses.BadRequestResponse
 import com.kcibald.services.fronting.objs.responses.InternalErrorResponse
 import com.kcibald.services.fronting.objs.responses.Response
-import com.wusatosi.recaptcha.v3.RecaptchaV3Client
 import io.vertx.core.Vertx
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.core.impl.NoStackTraceThrowable
@@ -29,8 +28,6 @@ internal inline fun launchVertxCorutinue(
 ) {
     GlobalScope.launch(vertxOverride.dispatcher(), block = block)
 }
-
-internal val RECAPTCHA = RecaptchaV3Client("", useRecaptchaDotNetEndPoint = true)
 
 object IncompleteRequestException : NoStackTraceThrowable("incomplete request")
 
