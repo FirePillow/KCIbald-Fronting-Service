@@ -113,6 +113,7 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
                 val user = verification.user
                 val claims = jsonObjectOf(
                     "username" to user.userName,
+                    "url_key" to user.urlKey,
                     "user_avatar" to user.avatar
                 )
 
