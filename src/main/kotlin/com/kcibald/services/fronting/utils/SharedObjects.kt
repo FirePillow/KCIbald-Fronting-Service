@@ -8,20 +8,21 @@ import io.vertx.ext.auth.jwt.JWTAuth
 interface SharedObjects {
     val config: Config
     val vertx: Vertx
-    val recaptchaClient: RecaptchaV3Client
+    val recaptchaClient: RecaptchaV3Client?
     val jwtAuth: JWTAuth
 
     companion object {
         fun createDefault(
             config: Config,
             vertx: Vertx,
-            recaptchaClient: RecaptchaV3Client,
+            // null if disabled
+            recaptchaClient: RecaptchaV3Client?,
             jwtAuth: JWTAuth
         ): SharedObjects {
             data class SharedObjectsImpl(
                 override val config: Config,
                 override val vertx: Vertx,
-                override val recaptchaClient: RecaptchaV3Client,
+                override val recaptchaClient: RecaptchaV3Client?,
                 override val jwtAuth: JWTAuth
             ) : SharedObjects
 

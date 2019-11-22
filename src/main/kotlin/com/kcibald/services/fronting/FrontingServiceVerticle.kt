@@ -51,10 +51,15 @@ object FrontingServiceVerticle : CoroutineVerticle() {
 
     private fun initializeBasicObjects(config: Config): SharedObjects {
         val secretKey = config[MasterConfigSpec.RecaptchaSiteKey]
+        val recaptchaClient =
+            if (secretKey.isEmpty())
+                null
+            else
+                RecaptchaV3Client(secretKey)
         return SharedObjects.createDefault(
             config,
             vertx,
-            RecaptchaV3Client(secretKey),
+            recaptchaClient,
             jwtAuthFactory(config)
         )
     }
