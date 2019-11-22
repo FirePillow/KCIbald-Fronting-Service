@@ -3,7 +3,7 @@ package com.kcibald.services.fronting.controllers
 import com.uchuhimo.konf.ConfigSpec
 
 object MasterConfigSpec : ConfigSpec("") {
-    val httpPort by optional(8080, "http_port")
+    val VertxHttpServerConfig by optional(mapOf<String, Any>(), "vertx_http_server_config")
     val RecaptchaSiteKey by required<String>("recaptcha_site_key")
 
     object Authentication : ConfigSpec("authentication") {

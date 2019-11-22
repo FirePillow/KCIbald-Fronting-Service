@@ -1,5 +1,8 @@
 {
   "recaptcha_site_key": "k",
+  "vertx_http_server_config": {
+    "port": 8080
+  },
   "authentication": {
     "jwt_auth": {
       "pubSecKeys": [

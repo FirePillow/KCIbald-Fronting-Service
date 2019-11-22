@@ -5,6 +5,8 @@ import com.kcibald.services.fronting.controllers.common.CommonAPIRouter
 import com.kcibald.services.fronting.utils.SharedObjects
 import com.uchuhimo.konf.Config
 import com.wusatosi.recaptcha.v3.RecaptchaV3Client
+import io.vertx.core.http.HttpServerOptions
+import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.auth.jwt.JWTAuth
 import io.vertx.ext.auth.jwt.JWTAuthOptions
@@ -15,22 +17,36 @@ import io.vertx.kotlin.coroutines.CoroutineVerticle
 object FrontingServiceVerticle : CoroutineVerticle() {
 
     override suspend fun start() {
-        val config = Config { addSpec(MasterConfigSpec) }
-            .from.json.resource("config.json")
+        val config = loadConfigs()
 
         val shared = initializeBasicObjects(config)
 
         val router = Router.router(vertx)
-        CommonAPIRouter.routeAPIEndpoint(router, shared)
-        CommonAPIRouter.routeHTMLContent(router, shared)
+        routeEndpoints(router, shared)
 
-        val port = config[MasterConfigSpec.httpPort]
-        vertx
-            .createHttpServer()
-            .requestHandler(router::handle)
-            .listenAwait(port)
+        registryVertxHttpServer(config, router::handle)
 
         super.start()
+    }
+
+    private fun loadConfigs() = Config { addSpec(MasterConfigSpec) }
+        .from.json.resource("config.json")
+
+    private fun routeEndpoints(router: Router, shared: SharedObjects) {
+        CommonAPIRouter.routeAPIEndpoint(router, shared)
+        CommonAPIRouter.routeHTMLContent(router, shared)
+    }
+
+    private suspend fun registryVertxHttpServer(
+        config: Config,
+        routeHandle: (HttpServerRequest) -> Unit
+    ) {
+        val serverConfig = config[MasterConfigSpec.VertxHttpServerConfig]
+        val serverConfigInJson = JsonObject(serverConfig)
+        vertx
+            .createHttpServer(HttpServerOptions(serverConfigInJson))
+            .requestHandler(routeHandle)
+            .listenAwait()
     }
 
     private fun initializeBasicObjects(config: Config): SharedObjects {
