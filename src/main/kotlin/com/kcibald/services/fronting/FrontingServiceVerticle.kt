@@ -5,6 +5,7 @@ import com.kcibald.services.fronting.controllers.common.CommonAPIRouter
 import com.kcibald.services.fronting.utils.SharedObjects
 import com.uchuhimo.konf.Config
 import com.wusatosi.recaptcha.v3.RecaptchaV3Client
+import io.vertx.core.json.JsonObject
 import io.vertx.ext.auth.jwt.JWTAuth
 import io.vertx.ext.auth.jwt.JWTAuthOptions
 import io.vertx.ext.web.Router
@@ -33,13 +34,18 @@ object FrontingServiceVerticle : CoroutineVerticle() {
     }
 
     private fun initializeBasicObjects(config: Config): SharedObjects {
+        val secretKey = config[MasterConfigSpec.RecaptchaSiteKey]
         return SharedObjects.createDefault(
             config,
             vertx,
-//            TODO: finish recaptcha Configuration and jwtAuth Configuration
-            RecaptchaV3Client(""),
-            JWTAuth.create(vertx, JWTAuthOptions())
+            RecaptchaV3Client(secretKey),
+            jwtAuthFactory(config)
         )
+    }
+
+    private fun jwtAuthFactory(config: Config): JWTAuth {
+        val json = JsonObject(config[MasterConfigSpec.Authentication.JwtAuthConfig])
+        return JWTAuth.create(vertx, JWTAuthOptions(json))
     }
 
     override suspend fun stop() {
