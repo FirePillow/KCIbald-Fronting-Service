@@ -26,7 +26,7 @@ object Logout : FancyEntry {
 
     override fun routeHTMLContent(router: Router, sharedObjects: SharedObjects) {
         val cookieKey = sharedObjects.config[Authentication.CookieKey]
-        val redirectURL = sharedObjects.config[Authentication.RedirectURLWhenLogout]
+        val redirectURL = "/login"
 
         router
             .get("/logout")
