@@ -3,6 +3,7 @@ package com.kcibald.services.fronting
 import com.github.lalyos.jfiglet.FigletFont
 import com.kcibald.services.fronting.controllers.MasterConfigSpec
 import com.kcibald.services.fronting.controllers.common.CommonAPIRouter
+import com.kcibald.services.fronting.controllers.user.UserAPIRouter
 import com.kcibald.services.fronting.objs.entries.GroupingRouter
 import com.kcibald.services.fronting.utils.SharedObjects
 import com.kcibald.utils.d
@@ -59,7 +60,8 @@ object FrontingServiceVerticle : CoroutineVerticle() {
     private fun routeEndpoints(router: Router, shared: SharedObjects) {
         logger.i { "Starting registering endpoints" }
         val groups = listOf(
-            CommonAPIRouter
+            CommonAPIRouter,
+            UserAPIRouter
         )
 
         routeAPIEndpoint(groups, router, shared)
