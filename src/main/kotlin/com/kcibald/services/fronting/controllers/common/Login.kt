@@ -12,6 +12,7 @@ import com.kcibald.services.fronting.utils.*
 import com.kcibald.services.user.AuthenticationClient
 import com.kcibald.services.user.AuthenticationResult
 import com.kcibald.utils.d
+import com.kcibald.utils.i
 import com.kcibald.utils.w
 import com.wusatosi.recaptcha.v3.RecaptchaV3Client
 import io.vertx.core.http.HttpServerResponse
@@ -48,6 +49,7 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
         this.recaptchaClient = sharedObjects.recaptchaClient
         this.jwtAuthProvider = sharedObjects.jwtAuth
 
+        logger.d { "Initializing Login API Route mounting" }
         this.recaptchaScoreThreshold = config[Authentication.RecaptchaThreshold]
         this.COOKIE_KEY = config[Authentication.CookieKey]
         this.authenticationClient = AuthenticationClient.createDefault(vertx)
@@ -57,6 +59,15 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
             .consumeJson()
             .handler((CookieHandler.create())::handle)
             .coroutineCoreHandler(::handleEvent)
+
+        logger.i {
+            data class LoginConfiguration(
+                val recaptchaScoreThreshold: Double = this.recaptchaScoreThreshold,
+                val cookieKey: String = this.COOKIE_KEY,
+                val authenticationClient: AuthenticationClient = this.authenticationClient
+            )
+            "Mounted login API endpoint with ${LoginConfiguration()}, registered to router: $router"
+        }
     }
 
     private val emailValidator = EmailValidator.getInstance()
@@ -70,7 +81,7 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
 
         logger.d { "account: $accountEmail attempts to login" }
 
-        if (checkArguments(accountEmail, password)) {
+        if (!checkArguments(accountEmail, password)) {
             logger.d { "account: $accountEmail login attempt failed on pre-check" }
             return StandardAuthorizationFailureResponses.PASSWORD_OR_ACCOUNT_EMAIL_INCORRECT
         }
@@ -146,7 +157,7 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
         accountEmail: String,
         expireInMinutes: Int
     ): String = jwtAuthProvider.generateToken(
-        generateCliaimsForUser(user),
+        generateClaimsForUser(user),
         jwtOptionsOf(
             audience = listOf(user.urlKey, user.userName, accountEmail),
             expiresInMinutes = expireInMinutes,
@@ -154,7 +165,7 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
         )
     )
 
-    private fun generateCliaimsForUser(user: User): JsonObject {
+    private fun generateClaimsForUser(user: User): JsonObject {
         return jsonObjectOf(
             "username" to user.userName,
             "url_key" to user.urlKey,
@@ -172,7 +183,7 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
     }
 
     private fun checkArguments(account: String, password: String) =
-        !emailValidator.isValid(account) || !passwordPattern.matcher(password).matches()
+        emailValidator.isValid(account) && passwordPattern.matcher(password).matches()
 
     private fun bannedFailureResponse(result: AuthenticationResult.Banned): Response = object : Response {
         override fun apply(response: HttpServerResponse) {

@@ -24,6 +24,9 @@ class AuthorizationHandler(
     override fun handle(event: RoutingContext) {
         val cookie = event.getCookie(cookieKey)
         if (cookie == null) {
+            logger.d {
+                "declined request (not authenticated) because credential cookie with key $cookieKey is not present"
+            }
             event.responseWith(response)
             return
         }

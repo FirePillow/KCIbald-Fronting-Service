@@ -1,5 +1,5 @@
 {
-  "recaptcha_site_key": "k",
+  "recaptcha_site_key": "",
   "vertx_http_server_config": {
     "port": 8080
   },
