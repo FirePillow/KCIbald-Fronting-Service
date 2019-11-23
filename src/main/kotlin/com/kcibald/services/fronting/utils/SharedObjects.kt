@@ -1,5 +1,6 @@
 package com.kcibald.services.fronting.utils
 
+import com.kcibald.services.ServiceClient
 import com.uchuhimo.konf.Config
 import com.wusatosi.recaptcha.v3.RecaptchaV3Client
 import io.vertx.core.Vertx
@@ -10,6 +11,11 @@ interface SharedObjects {
     val vertx: Vertx
     val recaptchaClient: RecaptchaV3Client?
     val jwtAuth: JWTAuth
+
+    /**
+     * For testing intercept
+     */
+    fun checkServiceClientOverride(serviceName: String): ServiceClient?
 
     companion object {
         fun createDefault(
@@ -24,7 +30,9 @@ interface SharedObjects {
                 override val vertx: Vertx,
                 override val recaptchaClient: RecaptchaV3Client?,
                 override val jwtAuth: JWTAuth
-            ) : SharedObjects
+            ) : SharedObjects {
+                override fun checkServiceClientOverride(serviceName: String): ServiceClient? = null
+            }
 
             return SharedObjectsImpl(
                 config, vertx, recaptchaClient, jwtAuth
