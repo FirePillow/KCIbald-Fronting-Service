@@ -22,7 +22,6 @@ import io.vertx.core.logging.LoggerFactory
 import io.vertx.ext.auth.jwt.JWTAuth
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
-import io.vertx.ext.web.handler.CookieHandler
 import io.vertx.kotlin.core.json.get
 import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.jsonObjectOf
@@ -57,7 +56,6 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
         router
             .post("/login")
             .consumeJson()
-            .handler((CookieHandler.create())::handle)
             .coroutineCoreHandler(::handleEvent)
 
         logger.i {

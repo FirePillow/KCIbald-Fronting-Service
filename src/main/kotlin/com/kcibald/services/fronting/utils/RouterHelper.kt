@@ -10,7 +10,6 @@ import io.vertx.ext.auth.jwt.JWTAuth
 import io.vertx.ext.web.Route
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.handler.BodyHandler
-import io.vertx.ext.web.handler.CookieHandler
 import io.vertx.kotlin.core.json.jsonObjectOf
 import org.slf4j.LoggerFactory
 
@@ -42,8 +41,6 @@ inline fun Route.consumeJson(): Route {
     return this
 }
 
-private val cookieHandler = CookieHandler.create()
-
 private val authenticationRejectJson: JsonObject = jsonObjectOf(
     "success" to false,
     "type" to "AUTHORIZATION_MISSING_OR_INVALID"
@@ -56,7 +53,6 @@ object StandardAuthenticationRejectResponse {
 
 fun Route.authenticated(rejectResponse: Response, config: Config, authProvider: JWTAuth): Route {
     val authorizationHandler = AuthorizationHandler(rejectResponse, config, authProvider)
-    this.handler(cookieHandler::handle)
     this.handler(authorizationHandler)
     return this
 }
