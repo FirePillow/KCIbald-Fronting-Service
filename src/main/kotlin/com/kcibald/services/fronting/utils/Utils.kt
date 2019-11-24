@@ -3,7 +3,6 @@
 package com.kcibald.services.fronting.utils
 
 import io.vertx.core.Vertx
-import io.vertx.core.http.HttpServerResponse
 import io.vertx.core.impl.NoStackTraceThrowable
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.RoutingContext
@@ -29,8 +28,6 @@ inline fun incompleteRequest(): Nothing {
 }
 
 inline fun JsonObject.formatToString(): String = this.encode()
-
-inline fun HttpServerResponse.end(body: JsonObject) = this.end(body.formatToString())
 
 internal val RoutingContext.username: String
     get() = this.user().principal().getString("username")

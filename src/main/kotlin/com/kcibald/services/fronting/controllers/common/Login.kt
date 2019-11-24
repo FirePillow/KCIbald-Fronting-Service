@@ -7,6 +7,7 @@ import com.kcibald.services.fronting.objs.entries.Path
 import com.kcibald.services.fronting.objs.entries.UnsafeHTMLContentEntry
 import com.kcibald.services.fronting.objs.responses.EmptyResponse
 import com.kcibald.services.fronting.objs.responses.InternalErrorResponse
+import com.kcibald.services.fronting.objs.responses.JsonResponse
 import com.kcibald.services.fronting.objs.responses.Response
 import com.kcibald.services.fronting.utils.*
 import com.kcibald.services.user.AuthenticationClient
@@ -15,11 +16,10 @@ import com.kcibald.utils.d
 import com.kcibald.utils.i
 import com.kcibald.utils.w
 import com.wusatosi.recaptcha.v3.RecaptchaV3Client
-import io.vertx.core.http.HttpServerResponse
+import io.vertx.core.http.Cookie
 import io.vertx.core.json.JsonObject
 import io.vertx.core.logging.LoggerFactory
 import io.vertx.ext.auth.jwt.JWTAuth
-import io.vertx.ext.web.Cookie
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.handler.CookieHandler
@@ -83,13 +83,13 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
 
         if (!checkArguments(accountEmail, password)) {
             logger.d { "account: $accountEmail login attempt failed on pre-check" }
-            return StandardAuthorizationFailureResponses.PASSWORD_OR_ACCOUNT_EMAIL_INCORRECT
+            return passwordOrAccountEmailIncorrectResponse
         }
 
         val captchaResult = checkRecaptchaIfEnabled(requestObj)
         logger.d { "recaptcha checking for account: $accountEmail, is $captchaResult" }
         if (captchaResult == RecaptchaResponse.VERIFIED_INVALID) {
-            return StandardAuthorizationFailureResponses.PASSWORD_OR_ACCOUNT_EMAIL_INCORRECT
+            return passwordOrAccountEmailIncorrectResponse
         }
 
         return verifyCredit(accountEmail, password, captchaResult, context)
@@ -112,9 +112,9 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
                 systemErrorResponse(verification)
         }
 
-    private fun userNotFoundResponse(accountEmail: String): StandardAuthorizationFailureResponses {
+    private fun userNotFoundResponse(accountEmail: String): Response {
         logger.d { "user $accountEmail was not found" }
-        return StandardAuthorizationFailureResponses.PASSWORD_OR_ACCOUNT_EMAIL_INCORRECT
+        return passwordOrAccountEmailIncorrectResponse
     }
 
     private fun systemErrorResponse(verification: AuthenticationResult.SystemError): InternalErrorResponse {
@@ -185,43 +185,42 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
     private fun checkArguments(account: String, password: String) =
         emailValidator.isValid(account) && passwordPattern.matcher(password).matches()
 
-    private fun bannedFailureResponse(result: AuthenticationResult.Banned): Response = object : Response {
-        override fun apply(response: HttpServerResponse) {
-            val timeToUnban = if (result.duration < 0) -1 else result.timeBanned + result.duration
-            val body = json {
-                obj(
-                    "success" to false,
-                    "type" to "USER_BANNED",
-                    "banned_type" to obj(
-                        "message" to result.message,
-                        "time_of_unban" to timeToUnban
-                    )
+    private fun bannedFailureResponse(result: AuthenticationResult.Banned): Response {
+        val timeToUnban = if (result.duration < 0) -1 else result.timeBanned + result.duration
+
+        val body = json {
+            obj(
+                "success" to false,
+                "type" to "USER_BANNED",
+                "banned_type" to obj(
+                    "message" to result.message,
+                    "time_of_unban" to timeToUnban
                 )
-            }
-            response
-                .setStatusCode(403)
-                .putHeader("WWW-Authenticate", "FormBased")
-                .end(body)
+            )
         }
+
+        return JsonResponse(body, 403, "WWW-Authenticate" to "FormBased")
     }
 
-    private enum class StandardAuthorizationFailureResponses(val type: String) : Response {
-        PASSWORD_OR_ACCOUNT_EMAIL_INCORRECT("PASSWORD_OR_ACCOUNT_EMAIL_INCORRECT"),
-        CAPTCHA_VERIFICATION_FAILED("CAPTCHA_VERIFICATION_FAILED");
+    private val passwordOrAccountEmailIncorrectResponse = JsonResponse(
+        jsonObjectOf(
+            "success" to false,
+            "type" to "PASSWORD_OR_ACCOUNT_EMAIL_INCORRECT"
+        )
+        ,
+        401,
+        "WWW-Authenticate" to "FormBased"
+    )
 
-        override fun apply(response: HttpServerResponse) {
-            val body = json {
-                obj(
-                    "success" to false,
-                    "type" to type
-                )
-            }
-            response
-                .setStatusCode(401)
-                .putHeader("WWW-Authenticate", "FormBased")
-                .end(body)
-        }
-    }
+    private val captchaVerificationFailedResponse = JsonResponse(
+        jsonObjectOf(
+            "success" to false,
+            "type" to "CAPTCHA_VERIFICATION_FAILED"
+        )
+        ,
+        401,
+        "WWW-Authenticate" to "FormBased"
+    )
 
     private const val maximumRecaptchaTrial = 2
 
