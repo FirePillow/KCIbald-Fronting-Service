@@ -1,31 +1,36 @@
-@file:Suppress("NOTHING_TO_INLINE")
-
 package com.kcibald.services.fronting.utils
 
 import com.kcibald.services.fronting.handlers.AuthorizationHandler
 import com.kcibald.services.fronting.objs.responses.*
+import com.kcibald.utils.d
+import com.kcibald.utils.t
+import com.kcibald.utils.w
 import com.uchuhimo.konf.Config
 import io.vertx.core.json.JsonObject
+import io.vertx.core.logging.LoggerFactory
 import io.vertx.ext.auth.jwt.JWTAuth
 import io.vertx.ext.web.Route
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.handler.BodyHandler
 import io.vertx.kotlin.core.json.jsonObjectOf
-import org.slf4j.LoggerFactory
 
 private object RouterHelper
+
+private val logger = LoggerFactory.getLogger(RouterHelper.javaClass)
 
 const val JSON_CONTEXT_KEY = "_json_parsed"
 
 fun Route.checkJsonIntegrity() = handler {
-    val result = runCatching {
-        it.bodyAsJson
-    }
-    if (result.isFailure) {
-//            TODO: log
+    logger.t { "Checking json body integrity" }
+    // RoutingContext.bodyAsJson is nullable as well
+    val result = runCatching { it.bodyAsJson }.getOrNull()
+
+    if (result == null) {
+        logger.d { "parse json failed (exception or empty body), reject request with Bad Request Response" }
         it.responseWith(BadRequestResponse)
     } else {
-        it.put(JSON_CONTEXT_KEY, result.getOrNull())
+        it.put(JSON_CONTEXT_KEY, result)
+        logger.t { "body json parse success, context key $JSON_CONTEXT_KEY with json body done" }
         it.next()
     }
 }!!
@@ -34,9 +39,10 @@ fun Route.checkJsonIntegrity() = handler {
 inline val RoutingContext.jsonObject: JsonObject
     get() = this[JSON_CONTEXT_KEY]!!
 
-inline fun Route.consumeJson(): Route {
+private val nonUploadBodyHandler = BodyHandler.create(false)
+fun Route.consumeJson(bodyHandler: BodyHandler = nonUploadBodyHandler): Route {
     this.consumes(ContentTypes.JSON)
-    this.handler(BodyHandler.create(false))
+    this.handler(bodyHandler)
     this.checkJsonIntegrity()
     return this
 }
@@ -69,22 +75,28 @@ fun Route.coreHandler(core: (RoutingContext) -> Response) = this.handler {
 
 fun Route.coroutineCoreHandler(core: suspend (RoutingContext) -> Response) = handler {
     launchVertxCorutinue(it.vertx()) {
+        logger.t { "Accepted and start processing request through $core, request: ${it.request()}" }
         val result = runCatching { core(it) }
         val response = normalize(result)
+        logger.t { "normalized result as $response" }
         it.responseWith(response)
     }
 }!!
 
-private val coreHandlerAcceptorLogger = LoggerFactory.getLogger(RouterHelper.javaClass)
-
-private inline fun normalize(result: Result<Response>): Response {
+private fun normalize(result: Result<Response>): Response {
     if (result.isSuccess) {
+        logger.t { "handler is success, normalize as is" }
         return result.getOrNull()!!
     } else {
-        when (val exception = result.exceptionOrNull()!!) {
-            is IncompleteRequestException -> return BadRequestResponse
+        val exception = result.exceptionOrNull()!!
+        logger.t(exception) { "handler failed with exception, exception: $exception" }
+        when (exception) {
+            is IncompleteRequestException -> {
+                logger.d { "bad request as IncompleteRequestException has received" }
+                return BadRequestResponse
+            }
             else -> {
-                coreHandlerAcceptorLogger.warn("unexpected error from core handler", exception)
+                logger.w(exception) { "unexpected error from core handler" }
                 return InternalErrorResponse
             }
         }
