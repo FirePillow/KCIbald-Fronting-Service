@@ -51,7 +51,9 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
         logger.d { "Initializing Login API Route mounting" }
         this.recaptchaScoreThreshold = config[Authentication.RecaptchaThreshold]
         this.COOKIE_KEY = config[Authentication.CookieKey]
-        this.authenticationClient = AuthenticationClient.createDefault(vertx)
+        this.authenticationClient = sharedObjects.getService("auth") {
+            AuthenticationClient.createDefault(vertx)
+        }
 
         router
             .post("/login")
@@ -101,7 +103,7 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
     ): Response =
         when (val verification = authenticationClient.verifyCredential(accountEmail, password)) {
             is AuthenticationResult.InvalidCredential, is AuthenticationResult.UserNotFound ->
-                userNotFoundResponse(accountEmail)
+                invalidCredentialResponse(accountEmail)
             is AuthenticationResult.Banned ->
                 bannedFailureResponse(verification)
             is AuthenticationResult.Success ->
@@ -110,7 +112,7 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
                 systemErrorResponse(verification)
         }
 
-    private fun userNotFoundResponse(accountEmail: String): Response {
+    private fun invalidCredentialResponse(accountEmail: String): Response {
         logger.d { "user $accountEmail was not found" }
         return passwordOrAccountEmailIncorrectResponse
     }
@@ -203,10 +205,10 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
     private val passwordOrAccountEmailIncorrectResponse = JsonResponse(
         jsonObjectOf(
             "success" to false,
-            "type" to "PASSWORD_OR_ACCOUNT_EMAIL_INCORRECT"
+            "type" to "PASSWORD_OR_USERNAME_INCORRECT"
         )
         ,
-        401,
+        403,
         "WWW-Authenticate" to "FormBased"
     )
 

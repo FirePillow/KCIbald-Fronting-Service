@@ -40,3 +40,6 @@ interface SharedObjects {
         }
     }
 }
+
+internal inline fun <reified T : ServiceClient> SharedObjects.getService(name: String, otherWise: () -> T): T =
+    this.checkServiceClientOverride(name) as? T ?: otherWise()

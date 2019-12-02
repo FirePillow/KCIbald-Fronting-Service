@@ -1,0 +1,17 @@
+{
+  "recaptcha_site_key": "",
+  "vertx_http_server_config": {
+    "port": 8080
+  },
+  "authentication": {
+    "jwt_auth": {
+      "pubSecKeys": [
+        {
+          "algorithm": "HS256",
+          "publicKey": "key",
+          "symmetric": true
+        }
+      ]
+    }
+  }
+}
