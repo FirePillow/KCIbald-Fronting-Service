@@ -13,7 +13,7 @@ repositories {
     jcenter()
 }
 
-def vertxVersion = "3.8.4"
+def vertxVersion = "4.0.0-milestone3"
 def junitVersion = "5.5.2"
 
 dependencies {
@@ -25,6 +25,7 @@ dependencies {
     implementation "io.vertx:vertx-core:$vertxVersion"
     compile "io.vertx:vertx-web:$vertxVersion"
     testImplementation "io.vertx:vertx-junit5:$vertxVersion"
+    implementation 'io.github.tsegismont:vertx-contextual-logging:1.0.0-alpha'
 
     implementation 'com.github.wusatosi:kotlin-recaptcha-client:7b89048b41'
     implementation 'com.github.FirePillow:KCIbald-shared-obj:5f982779fa'
