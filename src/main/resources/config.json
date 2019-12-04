@@ -8,7 +8,7 @@
       "pubSecKeys": [
         {
           "algorithm": "HS256",
-          "publicKey": "key",
+          "secretKey": "key",
           "symmetric": true
         }
       ]

@@ -32,12 +32,12 @@ object FrontingServiceVerticle : CoroutineVerticle() {
 
         logger.i { "starting FrontingServiceVerticle" }
         val config = loadConfigs()
-        val shared = initializeBasicObjects(config)
+        val shared = initializeBasicObject(config)
 
         val router = Router.router(vertx)
         routeEndpoints(router, shared)
 
-        registryVertxHttpServer(config, router::handle)
+        registryVertxHttpServers(config, router)
 
         logger.i { "FrontingServiceVerticle started" }
         super.start()
@@ -93,20 +93,21 @@ object FrontingServiceVerticle : CoroutineVerticle() {
         logger.i { "HTML endpoints registered" }
     }
 
-    private suspend fun registryVertxHttpServer(
+    private suspend fun registryVertxHttpServers(
         config: Config,
-        routeHandle: (HttpServerRequest) -> Unit
+        router: Router
     ) {
         val serverConfig = config[MasterConfigSpec.VertxHttpServerConfig]
         val serverConfigInJson = JsonObject(serverConfig)
         logger.d { "registering vertx http server with config ${serverConfigInJson.encode()}" }
-        vertx
+        val server = vertx
             .createHttpServer(HttpServerOptions(serverConfigInJson))
-            .requestHandler(routeHandle)
+            .requestHandler(router)
             .listenAwait()
+        logger.i { "listening at port: ${server.actualPort()}" }
     }
 
-    private fun initializeBasicObjects(config: Config): SharedObjects {
+    private fun initializeBasicObject(config: Config): SharedObjects {
         logger.d { "initializing basic objects" }
         val secretKey = config[MasterConfigSpec.RecaptchaSiteKey]
         val recaptchaClient =
@@ -132,8 +133,10 @@ object FrontingServiceVerticle : CoroutineVerticle() {
 
     private fun jwtAuthFactory(config: Config): JWTAuth {
         val json = JsonObject(config[MasterConfigSpec.Authentication.JwtAuthConfig])
-        logger.d { "creating jwtAuth with config ${json.encode()}" }
-        return JWTAuth.create(vertx, JWTAuthOptions(json))
+        logger.d { "creating jwtAuth" }
+        val jwt = JWTAuth.create(vertx, JWTAuthOptions(json))
+        logger.d { "created jwtAuth with config ${json.encode()}" }
+        return jwt
     }
 
     override suspend fun stop() {
