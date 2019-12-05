@@ -5,6 +5,7 @@ import com.kcibald.services.fronting.controllers.MasterConfigSpec
 import com.kcibald.services.fronting.controllers.common.CommonAPIRouter
 import com.kcibald.services.fronting.controllers.user.UserAPIRouter
 import com.kcibald.services.fronting.objs.entries.GroupingRouter
+import com.kcibald.services.fronting.utils.RequestIDHandler
 import com.kcibald.services.fronting.utils.SharedObjects
 import com.kcibald.utils.d
 import com.kcibald.utils.i
@@ -12,7 +13,6 @@ import com.kcibald.utils.w
 import com.uchuhimo.konf.Config
 import com.wusatosi.recaptcha.v3.RecaptchaV3Client
 import io.vertx.core.http.HttpServerOptions
-import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.json.JsonObject
 import io.vertx.core.logging.LoggerFactory
 import io.vertx.ext.auth.jwt.JWTAuth
@@ -35,12 +35,17 @@ object FrontingServiceVerticle : CoroutineVerticle() {
         val shared = initializeBasicObject(config)
 
         val router = Router.router(vertx)
+        initializeRouter(router)
         routeEndpoints(router, shared)
 
         registryVertxHttpServers(config, router)
 
         logger.i { "FrontingServiceVerticle started" }
         super.start()
+    }
+
+    private fun initializeRouter(router: Router) {
+        router.route().handler(RequestIDHandler)
     }
 
     private fun printStartupBanner() {
