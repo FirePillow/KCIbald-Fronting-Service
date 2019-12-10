@@ -7,6 +7,7 @@ import com.kcibald.services.fronting.controllers.user.UserAPIRouter
 import com.kcibald.services.fronting.objs.entries.GroupingRouter
 import com.kcibald.services.fronting.utils.RequestIDHandler
 import com.kcibald.services.fronting.utils.SharedObjects
+import com.kcibald.services.fronting.utils.VertxHelper
 import com.kcibald.utils.d
 import com.kcibald.utils.i
 import com.kcibald.utils.w
@@ -128,10 +129,10 @@ object FrontingServiceVerticle : CoroutineVerticle() {
             }
         val shared = SharedObjects.createDefault(
             config,
-            vertx,
             recaptchaClient,
             jwtAuthFactory(config)
         )
+        vertx.orCreateContext.put(VertxHelper.sharedObjVertxContextKey, shared)
         logger.d { "basic objects created" }
         return shared
     }

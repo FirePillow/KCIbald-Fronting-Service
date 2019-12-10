@@ -23,7 +23,7 @@ object DescribeUserAPI : APIEntry {
 
     override fun routeAPIEndpoint(router: Router, sharedObjects: SharedObjects) {
         logger.d { "Mounting describe user API to router $router, path /u/:userKey/ and /me/" }
-        this.describeUserClient = DescribeUserClient.createDefault(sharedObjects.vertx)
+        this.describeUserClient = DescribeUserClient.createDefault(VertxHelper.currentVertx())
         routeDefaultEndPoint(router, sharedObjects)
         rerouteMeEndpoint(router, sharedObjects)
         logger.i { "Describe User API (/u/:userKey/ and /me/) registried" }

@@ -43,7 +43,7 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
     private var recaptchaClient: RecaptchaV3Client? = null
 
     override fun routeAPIEndpoint(router: Router, sharedObjects: SharedObjects) {
-        val vertx = sharedObjects.vertx
+        val vertx = VertxHelper.currentVertx()
         val config = sharedObjects.config
         this.recaptchaClient = sharedObjects.recaptchaClient
         this.jwtAuthProvider = sharedObjects.jwtAuth
