@@ -70,7 +70,10 @@ object FrontingServiceVerticle : CoroutineVerticle() {
             UserAPIRouter
         )
 
-        routeAPIEndpoint(groups, router, shared)
+        val apiRouter = Router.router(vertx)
+        routeAPIEndpoint(groups, apiRouter, shared)
+        router.mountSubRouter("/v1/", apiRouter)
+
         routeHTMLEndpoint(groups, router, shared)
         logger.i { "Endpoint registration completed" }
     }
