@@ -13,6 +13,10 @@ repositories {
     jcenter()
 }
 
+application {
+    mainClassName = 'com.kcibald.services.fronting.Bootstrap'
+}
+
 def vertxVersion = "4.0.0-milestone4"
 def junitVersion = "5.5.2"
 
