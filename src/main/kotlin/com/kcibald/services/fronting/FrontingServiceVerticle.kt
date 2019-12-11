@@ -1,6 +1,8 @@
 package com.kcibald.services.fronting
 
 import com.github.lalyos.jfiglet.FigletFont
+import com.kcibald.objects.User
+import com.kcibald.services.ServiceClient
 import com.kcibald.services.fronting.controllers.MasterConfigSpec
 import com.kcibald.services.fronting.controllers.common.CommonAPIRouter
 import com.kcibald.services.fronting.controllers.user.UserAPIRouter
@@ -8,6 +10,8 @@ import com.kcibald.services.fronting.objs.entries.GroupingRouter
 import com.kcibald.services.fronting.utils.RequestIDHandler
 import com.kcibald.services.fronting.utils.SharedObjects
 import com.kcibald.services.fronting.utils.VertxHelper
+import com.kcibald.services.user.AuthenticationClient
+import com.kcibald.services.user.AuthenticationResult
 import com.kcibald.utils.d
 import com.kcibald.utils.i
 import com.kcibald.utils.w
@@ -130,14 +134,57 @@ object FrontingServiceVerticle : CoroutineVerticle() {
                 logger.d { "Creating recaptcha-v3-client" }
                 RecaptchaV3Client(secretKey)
             }
-        val shared = SharedObjects.createDefault(
-            config,
-            recaptchaClient,
-            jwtAuthFactory(config)
-        )
+        val shared = createInterceptedSharedObject(config, recaptchaClient)
         vertx.orCreateContext.put(VertxHelper.sharedObjVertxContextKey, shared)
         logger.d { "basic objects created" }
         return shared
+    }
+
+    private fun createInterceptedSharedObject(
+        config: Config,
+        recaptchaClient: RecaptchaV3Client?
+    ): SharedObjects {
+        return object : SharedObjects {
+            override val config: Config
+                get() = config
+            override val recaptchaClient: RecaptchaV3Client?
+                get() = recaptchaClient
+            override val jwtAuth: JWTAuth
+                get() = jwtAuthFactory(config)
+
+            override fun checkServiceClientOverride(serviceName: String): ServiceClient? {
+                if (serviceName == "auth") {
+                    return testOnlyPublicAuthenticationClient()
+                }
+                return null
+            }
+        }
+    }
+
+    private fun testOnlyPublicAuthenticationClient() = object : AuthenticationClient {
+        override val clientVersion: String
+            get() = ""
+        override val compatibleServiceVersion: String
+            get() = ""
+
+        override suspend fun verifyCredential(email: String, password: String): AuthenticationResult {
+            if (email == "sb@kcibald.com" && password == "Mikesb123!!") {
+                return AuthenticationResult.Success(
+                    User.createDefault(
+                        "mike",
+                        "mike",
+                        "avatars.kcibald.net",
+                        "mike good good"
+                    )
+                )
+            }
+
+            if (email == "crash@kcibald.com") {
+                throw Exception("simulating badbad result")
+            }
+
+            return AuthenticationResult.UserNotFound
+        }
     }
 
     private fun jwtAuthFactory(config: Config): JWTAuth {
