@@ -15,6 +15,10 @@ import io.vertx.ext.jwt.JWTOptions
 import io.vertx.ext.web.Router
 import io.vertx.junit5.VertxExtension
 import io.vertx.kotlin.core.json.jsonObjectOf
+import io.vertx.kotlin.coroutines.dispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.fail
@@ -47,7 +51,7 @@ internal class LoginAPITest : HttpAPITestBase() {
     ) {
         val router = Router.router(vertx)
 
-        val sharedObjects = object : TestingSharedObject(vertx) {
+        val sharedObjects = object : TestingSharedObject() {
             override val config: Config = config
 
             override val recaptchaClient: RecaptchaV3Client? = recaptchaV3Client
@@ -76,7 +80,7 @@ internal class LoginAPITest : HttpAPITestBase() {
     private val uri by lazy { URI.create("$domainWithoutSlash/login") }
 
     @Test
-    fun normal() = runBlocking {
+    fun normal() = runVertxCoroutinueContext(vertx) {
         val expectedEmail = "example@example.org"
         val expectedPassword = "egHR8vvfB34\$%u"
 
@@ -119,7 +123,7 @@ internal class LoginAPITest : HttpAPITestBase() {
     }
 
     @Test
-    fun malformed_no_account() = runBlocking {
+    fun malformed_no_account() = runVertxCoroutinueContext(vertx) {
         val authenticationClient = object : TestAuthenticationClient() {
             override suspend fun verifyCredential(email: String, password: String): AuthenticationResult {
                 return fail()
@@ -143,7 +147,7 @@ internal class LoginAPITest : HttpAPITestBase() {
     }
 
     @Test
-    fun malformed_no_password() = runBlocking {
+    fun malformed_no_password() = runVertxCoroutinueContext(vertx) {
         val authenticationClient = object : TestAuthenticationClient() {
             override suspend fun verifyCredential(email: String, password: String): AuthenticationResult {
                 return fail()
@@ -167,7 +171,7 @@ internal class LoginAPITest : HttpAPITestBase() {
     }
 
     @Test
-    fun not_found() = runBlocking {
+    fun not_found() = runVertxCoroutinueContext(vertx) {
         val client = object : TestAuthenticationClient() {
             override suspend fun verifyCredential(email: String, password: String): AuthenticationResult {
                 return AuthenticationResult.UserNotFound
@@ -209,4 +213,7 @@ internal class LoginAPITest : HttpAPITestBase() {
             "test-signature-${System.nanoTime()}"
         )
     }
+
+    fun runVertxCoroutinueContext(vertx: Vertx, block: suspend CoroutineScope.() -> Unit) =
+        runBlocking { GlobalScope.async(vertx.dispatcher(), block = block).await() }
 }
