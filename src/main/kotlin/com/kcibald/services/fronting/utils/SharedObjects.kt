@@ -2,12 +2,12 @@ package com.kcibald.services.fronting.utils
 
 import com.kcibald.services.ServiceClient
 import com.uchuhimo.konf.Config
-import com.wusatosi.recaptcha.v3.RecaptchaV3Client
+import com.wusatosi.recaptcha.RecaptchaClient
 import io.vertx.ext.auth.jwt.JWTAuth
 
 interface SharedObjects {
     val config: Config
-    val recaptchaClient: RecaptchaV3Client?
+    val recaptchaClient: RecaptchaClient?
     val jwtAuth: JWTAuth
 
     /**
@@ -19,12 +19,12 @@ interface SharedObjects {
         fun createDefault(
             config: Config,
             // null if disabled
-            recaptchaClient: RecaptchaV3Client?,
+            recaptchaClient: RecaptchaClient?,
             jwtAuth: JWTAuth
         ): SharedObjects {
             data class SharedObjectsImpl(
                 override val config: Config,
-                override val recaptchaClient: RecaptchaV3Client?,
+                override val recaptchaClient: RecaptchaClient?,
                 override val jwtAuth: JWTAuth
             ) : SharedObjects {
                 override fun checkServiceClientOverride(serviceName: String): ServiceClient? = null
