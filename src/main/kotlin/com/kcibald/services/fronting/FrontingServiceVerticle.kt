@@ -13,12 +13,14 @@ import com.kcibald.utils.i
 import com.kcibald.utils.w
 import com.uchuhimo.konf.Config
 import com.wusatosi.recaptcha.v3.RecaptchaV3Client
+import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerOptions
 import io.vertx.core.json.JsonObject
 import io.vertx.core.logging.LoggerFactory
 import io.vertx.ext.auth.jwt.JWTAuth
 import io.vertx.ext.auth.jwt.JWTAuthOptions
 import io.vertx.ext.web.Router
+import io.vertx.ext.web.handler.CorsHandler
 import io.vertx.kotlin.core.http.listenAwait
 import io.vertx.kotlin.coroutines.CoroutineVerticle
 import kotlinx.coroutines.Dispatchers
@@ -71,6 +73,14 @@ object FrontingServiceVerticle : CoroutineVerticle() {
         )
 
         val apiRouter = Router.router(vertx)
+
+        val corsHandler = CorsHandler.create(".*\\.kcibald.com\$")
+        corsHandler.allowCredentials(true)
+        corsHandler.allowedMethods(setOf(HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE))
+        corsHandler.allowedHeaders(setOf("Content-Length", "Content-Type", "Accept", "X-GOTO-WORK", "X-STUDY-HARD"))
+        corsHandler.maxAgeSeconds(300)
+        apiRouter.route().handler(corsHandler)
+
         routeAPIEndpoint(groups, apiRouter, shared)
         router.mountSubRouter("/v1/", apiRouter)
 
