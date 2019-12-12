@@ -153,12 +153,12 @@ object FrontingServiceVerticle : CoroutineVerticle() {
 
     private fun createInterceptedSharedObject(
         config: Config,
-        recaptchaClient: RecaptchaV3Client?
+        recaptchaClient: RecaptchaClient?
     ): SharedObjects {
         return object : SharedObjects {
             override val config: Config
                 get() = config
-            override val recaptchaClient: RecaptchaV3Client?
+            override val recaptchaClient: RecaptchaClient?
                 get() = recaptchaClient
             override val jwtAuth: JWTAuth
                 get() = jwtAuthFactory(config)
