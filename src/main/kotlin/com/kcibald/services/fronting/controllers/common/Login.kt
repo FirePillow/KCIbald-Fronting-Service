@@ -15,7 +15,7 @@ import com.kcibald.services.user.AuthenticationResult
 import com.kcibald.utils.d
 import com.kcibald.utils.i
 import com.kcibald.utils.w
-import com.wusatosi.recaptcha.v3.RecaptchaV3Client
+import com.wusatosi.recaptcha.RecaptchaClient
 import io.vertx.core.http.Cookie
 import io.vertx.core.json.JsonObject
 import io.vertx.core.logging.LoggerFactory
@@ -31,16 +31,14 @@ import org.apache.commons.validator.routines.EmailValidator
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
-import kotlin.properties.Delegates
 
 object Login : UnsafeHTMLContentEntry(), FancyEntry {
     private val logger = LoggerFactory.getLogger(Login::class.java)
 
-    private var recaptchaScoreThreshold by Delegates.notNull<Double>()
     private lateinit var COOKIE_KEY: String
     private lateinit var authenticationClient: AuthenticationClient
     private lateinit var jwtAuthProvider: JWTAuth
-    private var recaptchaClient: RecaptchaV3Client? = null
+    private var recaptchaClient: RecaptchaClient? = null
 
     override fun routeAPIEndpoint(router: Router, sharedObjects: SharedObjects) {
         val vertx = VertxHelper.currentVertx()
@@ -49,7 +47,6 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
         this.jwtAuthProvider = sharedObjects.jwtAuth
 
         logger.d { "Initializing Login API Route mounting" }
-        this.recaptchaScoreThreshold = config[Authentication.RecaptchaThreshold]
         this.COOKIE_KEY = config[Authentication.CookieKey]
         this.authenticationClient = sharedObjects.getService("auth") {
             AuthenticationClient.createDefault(vertx)
@@ -62,7 +59,6 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
 
         logger.i {
             data class LoginConfiguration(
-                val recaptchaScoreThreshold: Double = this.recaptchaScoreThreshold,
                 val cookieKey: String = this.COOKIE_KEY,
                 val authenticationClient: AuthenticationClient = this.authenticationClient
             )
@@ -238,11 +234,10 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
             try {
 //                it is not blocking call
                 @Suppress("BlockingMethodInNonBlockingContext")
-                val score = reclient.getVerifyScore(recaptchaToken)
-                return if (score < recaptchaScoreThreshold) {
-                    RecaptchaResponse.VERIFIED_INVALID
-                } else {
+                return if (reclient.verify(recaptchaToken)) {
                     RecaptchaResponse.VERIFIED_PASS
+                } else {
+                    RecaptchaResponse.VERIFIED_INVALID
                 }
             } catch (e: IOException) {
                 logger.info("IOException when validating recaptcha! $e", e)

@@ -12,7 +12,7 @@ import com.kcibald.utils.d
 import com.kcibald.utils.i
 import com.kcibald.utils.w
 import com.uchuhimo.konf.Config
-import com.wusatosi.recaptcha.v3.RecaptchaV3Client
+import com.wusatosi.recaptcha.RecaptchaClient
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerOptions
 import io.vertx.core.json.JsonObject
@@ -62,6 +62,7 @@ object FrontingServiceVerticle : CoroutineVerticle() {
         return withContext(Dispatchers.IO) {
             Config { addSpec(MasterConfigSpec) }
                 .from.json.resource(resourcePath)
+                .from.systemProperties()
         }
     }
 
@@ -137,8 +138,8 @@ object FrontingServiceVerticle : CoroutineVerticle() {
                 }
                 null
             } else {
-                logger.d { "Creating recaptcha-v3-client" }
-                RecaptchaV3Client(secretKey)
+                logger.d { "Creating recaptcha-client" }
+                RecaptchaClient.createUniversal(secretKey, config[MasterConfigSpec.Authentication.RecaptchaThreshold])
             }
         val shared = SharedObjects.createDefault(
             config,
