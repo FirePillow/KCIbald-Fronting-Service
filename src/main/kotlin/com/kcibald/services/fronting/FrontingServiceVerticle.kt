@@ -3,6 +3,7 @@ package com.kcibald.services.fronting
 import com.github.lalyos.jfiglet.FigletFont
 import com.kcibald.services.fronting.controllers.MasterConfigSpec
 import com.kcibald.services.fronting.controllers.common.CommonAPIRouter
+import com.kcibald.services.fronting.controllers.misc.MiscRouter
 import com.kcibald.services.fronting.controllers.user.UserAPIRouter
 import com.kcibald.services.fronting.objs.entries.GroupingRouter
 import com.kcibald.services.fronting.utils.RequestIDHandler
@@ -68,10 +69,7 @@ object FrontingServiceVerticle : CoroutineVerticle() {
 
     private fun routeEndpoints(router: Router, shared: SharedObjects) {
         logger.i { "Starting registering endpoints" }
-        val groups = listOf(
-            CommonAPIRouter,
-            UserAPIRouter
-        )
+        val groups = generateGroups()
 
         val apiRouter = Router.router(vertx)
 
@@ -88,6 +86,12 @@ object FrontingServiceVerticle : CoroutineVerticle() {
         routeHTMLEndpoint(groups, router, shared)
         logger.i { "Endpoint registration completed" }
     }
+
+    private fun generateGroups(): List<GroupingRouter> = listOf(
+        CommonAPIRouter,
+        UserAPIRouter,
+        MiscRouter
+    )
 
     private fun routeAPIEndpoint(
         groupingRouters: List<GroupingRouter>,

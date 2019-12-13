@@ -11,4 +11,13 @@ object MasterConfigSpec : ConfigSpec("") {
         val JwtAuthConfig by required<Map<String, *>>("jwt_auth", "see vertx jwtAuth config")
         val RecaptchaThreshold by optional(0.7, "login_recaptcha_threshold", "should be less than 1")
     }
+
+    object MiscFiles: ConfigSpec("misc_file") {
+        val FaviconRedirectURL by optional("", "favicon_redirect_url")
+        val FaviconFilePath by optional(
+            "static/misc/favicon.ico",
+            "favicon_file_path",
+            "fall back for favicon redirct url, will use only if favicon redirect url is empty"
+        )
+    }
 }
