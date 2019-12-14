@@ -19,10 +19,15 @@ object ContentTypes {
     const val HTML = "text/html"
 }
 
-internal inline fun launchVertxCorutinue(
-    vertx: Vertx,
+internal inline fun launchWithVertxCorutinue(
+    vertx: Vertx = VertxHelper.currentVertx(),
     noinline block: suspend CoroutineScope.() -> Unit
 ) = GlobalScope.launch(vertx.dispatcher(), block = block)
+
+internal inline fun <T> runWithVertxCorutinueAsync(
+    vertx: Vertx = VertxHelper.currentVertx(),
+    noinline block: suspend CoroutineScope.() -> T
+) = GlobalScope.async(vertx.dispatcher(), block = block)
 
 object IncompleteRequestException : NoStackTraceThrowable("incomplete request")
 

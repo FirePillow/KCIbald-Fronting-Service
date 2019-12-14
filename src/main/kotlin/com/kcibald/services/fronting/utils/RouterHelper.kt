@@ -74,7 +74,7 @@ fun Route.coreHandler(core: (RoutingContext) -> Response) = this.handler {
 }!!
 
 fun Route.coroutineCoreHandler(core: suspend (RoutingContext) -> Response) = handler {
-    launchVertxCorutinue(it.vertx()) {
+    launchWithVertxCorutinue(it.vertx()) {
         logger.t { "Accepted and start processing request through $core, request: ${it.request()}" }
         val result = runCatching { core(it) }
         val response = normalize(result)
