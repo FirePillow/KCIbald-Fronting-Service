@@ -2,13 +2,16 @@
 
 package com.kcibald.services.fronting.utils
 
+import com.kcibald.utils.d
 import io.vertx.core.Vertx
 import io.vertx.core.impl.NoStackTraceThrowable
 import io.vertx.core.json.JsonObject
+import io.vertx.core.logging.Logger
 import io.vertx.ext.web.RoutingContext
 import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
 object ContentTypes {
@@ -37,3 +40,18 @@ internal val RoutingContext.userUrlKey: String
 
 internal val RoutingContext.avatarKey: String
     get() = this.user().principal().getString("user_avatar")
+
+internal inline fun <OUT> withProcessTimeMonitoring(logger: Logger, block: () -> OUT): OUT =
+    withProcessTimeMonitoring(logger, "", block)
+
+internal inline fun <OUT> withProcessTimeMonitoring(logger: Logger, operationName: String, block: () -> OUT): OUT {
+    val enabled = logger.isDebugEnabled
+    val tStart = if (enabled) System.currentTimeMillis() else 0
+    return try {
+        block()
+    } finally {
+        if (enabled) {
+            logger.d { "$operationName took ${System.currentTimeMillis() - tStart}" }
+        }
+    }
+}
