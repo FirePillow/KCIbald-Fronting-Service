@@ -1,7 +1,7 @@
 package com.kcibald.services.fronting.handlers
 
 import com.kcibald.services.fronting.controllers.MasterConfigSpec.Authentication
-import com.kcibald.services.fronting.objs.responses.Response
+import com.kcibald.services.fronting.objs.responses.TerminateResponse
 import com.kcibald.services.fronting.utils.responseWith
 import com.kcibald.services.fronting.utils.username
 import com.kcibald.utils.d
@@ -13,7 +13,7 @@ import io.vertx.ext.web.RoutingContext
 import io.vertx.kotlin.core.json.jsonObjectOf
 
 class AuthorizationHandler(
-    private val response: Response,
+    private val rejectResponse: TerminateResponse,
     configSource: Config,
     private val authProvider: AuthProvider
 ) : Handler<RoutingContext> {
@@ -27,7 +27,7 @@ class AuthorizationHandler(
             logger.d {
                 "declined request (not authenticated) because credential cookie with key $cookieKey is not present"
             }
-            event.responseWith(response)
+            event.responseWith(rejectResponse)
             return
         }
         authProvider.authenticate(jsonObjectOf("jwt" to cookie)) {
@@ -41,7 +41,7 @@ class AuthorizationHandler(
                 logger.d(cause) {
                     "denied request, because insufficient authentication, exception: ${cause.javaClass}, ${cause.message}"
                 }
-                event.responseWith(response)
+                event.responseWith(rejectResponse)
             }
         }
     }

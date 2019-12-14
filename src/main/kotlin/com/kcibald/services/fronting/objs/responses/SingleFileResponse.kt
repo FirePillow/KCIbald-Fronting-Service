@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 class SingleFileResponse(
     private val filePath: String,
     private val maxAgeInSeconds: Long = TimeUnit.DAYS.toSeconds(1)
-) : Response {
+) : TerminateResponse {
     override fun apply(response: HttpServerResponse) {
         response.statusCode = 200
         val cacheControlValue = if (maxAgeInSeconds <= 0) {

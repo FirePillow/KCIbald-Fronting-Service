@@ -2,7 +2,7 @@ package com.kcibald.services.fronting.controllers.common
 
 import com.kcibald.services.fronting.controllers.MasterConfigSpec.Authentication
 import com.kcibald.services.fronting.objs.entries.FancyEntry
-import com.kcibald.services.fronting.objs.responses.EmptyResponse
+import com.kcibald.services.fronting.objs.responses.EmptyTerminationResponse
 import com.kcibald.services.fronting.objs.responses.RedirectResponse
 import com.kcibald.services.fronting.utils.*
 import com.kcibald.utils.d
@@ -25,7 +25,7 @@ object Logout : FancyEntry {
             .authenticated(StandardAuthenticationRejectResponse.API, sharedObjects.config, sharedObjects.jwtAuth)
             .coreHandler {
                 clearCookie(cookieKey, it)
-                EmptyResponse
+                EmptyTerminationResponse
             }
 
         logger.i { "Registries /logout (api) to router $router, config: cookieKey=$cookieKey" }

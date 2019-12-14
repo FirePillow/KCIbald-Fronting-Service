@@ -5,7 +5,7 @@ import io.vertx.core.http.HttpServerResponse
 class RedirectResponse private constructor(
     private val url: String,
     private val status: Int
-) : Response {
+) : TerminateResponse {
 
     constructor(url: String, temporaryRedirect: Boolean = true) : this(url, if (temporaryRedirect) 307 else 301)
 
