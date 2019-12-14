@@ -53,7 +53,6 @@ object Logout : FancyEntry {
         val cookie = Cookie.cookie(cookieKey, "")
         cookie.setMaxAge(-1)
         cookie.setSecure(true)
-        cookie.domain = "kcibald.com"
         context.addCookie(cookie)
     }
 

@@ -10,6 +10,7 @@ object MasterConfigSpec : ConfigSpec("") {
         val CookieKey by optional("_kb_aut", "cookie_key")
         val JwtAuthConfig by required<Map<String, *>>("jwt_auth", "see vertx jwtAuth config")
         val RecaptchaThreshold by optional(0.7, "login_recaptcha_threshold", "should be less than 1")
+        val CookieDomain by optional(".kcibald.com", "cookie_domain")
     }
 
     object MiscFiles: ConfigSpec("misc_file") {

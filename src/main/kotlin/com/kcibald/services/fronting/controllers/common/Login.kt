@@ -39,6 +39,7 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
     private lateinit var authenticationClient: AuthenticationClient
     private lateinit var jwtAuthProvider: JWTAuth
     private var recaptchaClient: RecaptchaClient? = null
+    private lateinit var COOKIE_DOMAIN: String
 
     override fun routeAPIEndpoint(router: Router, sharedObjects: SharedObjects) {
         val vertx = VertxHelper.currentVertx()
@@ -48,6 +49,7 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
 
         logger.d { "Initializing Login API Route mounting" }
         this.COOKIE_KEY = config[Authentication.CookieKey]
+        this.COOKIE_DOMAIN = config[Authentication.CookieDomain]
         this.authenticationClient = sharedObjects.getService("auth") {
             AuthenticationClient.createDefault(vertx)
         }
@@ -136,14 +138,14 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
         user: User,
         accountEmail: String
     ): Cookie {
-        val expireInMinutes = calcuateExpireInMinutes(captchaResult)
+        val expireInMinutes = calculateExpireInMinutes(captchaResult)
 
         val token = generateJwtToken(user, accountEmail, expireInMinutes)
 
         val cookie = Cookie.cookie(COOKIE_KEY, token)
         cookie.setSecure(true)
         cookie.setMaxAge(TimeUnit.MINUTES.toSeconds(expireInMinutes.toLong()))
-        cookie.domain = "kcibald.com"
+        cookie.domain = COOKIE_DOMAIN
 
         return cookie
     }
@@ -169,13 +171,11 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
         )
     }
 
-    private fun calcuateExpireInMinutes(captchaResult: RecaptchaResponse): Int {
-        val expireInMinutes =
-            if (captchaResult == RecaptchaResponse.VERIFICATION_FAILED)
-                5
-            else
-                TimeUnit.DAYS.toMinutes(30).toInt()
-        return expireInMinutes
+    private fun calculateExpireInMinutes(captchaResult: RecaptchaResponse): Int {
+        if (captchaResult == RecaptchaResponse.VERIFICATION_FAILED)
+            return 5
+        else
+            return TimeUnit.DAYS.toMinutes(30).toInt()
     }
 
     private fun checkArguments(account: String, password: String) =
