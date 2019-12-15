@@ -73,7 +73,7 @@ object FrontingServiceVerticle : CoroutineVerticle() {
 
         val apiRouter = Router.router(vertx)
 
-        val corsHandler = CorsHandler.create(".*\\.kcibald.com\$")
+        val corsHandler = CorsHandler.create(shared.config[MasterConfigSpec.CorsDomainPattern])
         corsHandler.allowCredentials(true)
         corsHandler.allowedMethods(setOf(HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE))
         corsHandler.allowedHeaders(setOf("Content-Length", "Content-Type", "Accept", "X-GOTO-WORK", "X-STUDY-HARD"))
