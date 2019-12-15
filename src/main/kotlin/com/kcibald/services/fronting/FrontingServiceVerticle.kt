@@ -5,6 +5,7 @@ import com.kcibald.objects.User
 import com.kcibald.services.ServiceClient
 import com.kcibald.services.fronting.controllers.MasterConfigSpec
 import com.kcibald.services.fronting.controllers.common.CommonAPIRouter
+import com.kcibald.services.fronting.controllers.misc.MiscRouter
 import com.kcibald.services.fronting.controllers.user.UserAPIRouter
 import com.kcibald.services.fronting.objs.entries.GroupingRouter
 import com.kcibald.services.fronting.utils.RequestIDHandler
@@ -72,14 +73,11 @@ object FrontingServiceVerticle : CoroutineVerticle() {
 
     private fun routeEndpoints(router: Router, shared: SharedObjects) {
         logger.i { "Starting registering endpoints" }
-        val groups = listOf(
-            CommonAPIRouter,
-            UserAPIRouter
-        )
+        val groups = generateGroups()
 
         val apiRouter = Router.router(vertx)
 
-        val corsHandler = CorsHandler.create(".*\\.kcibald.com\$")
+        val corsHandler = CorsHandler.create(shared.config[MasterConfigSpec.CorsDomainPattern])
         corsHandler.allowCredentials(true)
         corsHandler.allowedMethods(setOf(HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE))
         corsHandler.allowedHeaders(setOf("Content-Length", "Content-Type", "Accept", "X-GOTO-WORK", "X-STUDY-HARD"))
@@ -92,6 +90,12 @@ object FrontingServiceVerticle : CoroutineVerticle() {
         routeHTMLEndpoint(groups, router, shared)
         logger.i { "Endpoint registration completed" }
     }
+
+    private fun generateGroups(): List<GroupingRouter> = listOf(
+        CommonAPIRouter,
+        UserAPIRouter,
+        MiscRouter
+    )
 
     private fun routeAPIEndpoint(
         groupingRouters: List<GroupingRouter>,

@@ -6,7 +6,7 @@ import com.kcibald.services.fronting.objs.entries.APIEntry
 import com.kcibald.services.fronting.objs.responses.InternalErrorResponse
 import com.kcibald.services.fronting.objs.responses.JsonResponse
 import com.kcibald.services.fronting.objs.responses.NotFoundResponseInJson
-import com.kcibald.services.fronting.objs.responses.Response
+import com.kcibald.services.fronting.objs.responses.TerminateResponse
 import com.kcibald.services.fronting.utils.*
 import com.kcibald.services.user.DescribeUserClient
 import com.kcibald.utils.d
@@ -57,7 +57,7 @@ object DescribeUserAPI : APIEntry {
         logger.i { "Registries /me/ endpoint (reroute to /u/:userKey/) to router $router" }
     }
 
-    private suspend fun handleEvent(context: RoutingContext): Response {
+    private suspend fun handleEvent(context: RoutingContext): TerminateResponse {
         val urlKey = context.request().getParam("userKey")!!
         logger.d { "query user with urlKey: $urlKey" }
         val result = describeUserClient.describeUser(urlKey)
@@ -74,13 +74,13 @@ object DescribeUserAPI : APIEntry {
         return NotFoundResponseInJson
     }
 
-    private fun successResponse(result: User): Response {
+    private fun successResponse(result: User): TerminateResponse {
         logger.d { "successfully found user ($result) as requested" }
         val payload = result.json()
         return JsonResponse(payload)
     }
 
-    private fun failureResponse(urlKey: String, result: Result.Failure<User>): Response {
+    private fun failureResponse(urlKey: String, result: Result.Failure<User>): TerminateResponse {
         logger.w { "failed to query request user with urlKey $urlKey, result: $result" }
         return InternalErrorResponse
     }

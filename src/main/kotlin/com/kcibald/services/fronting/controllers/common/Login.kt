@@ -5,10 +5,10 @@ import com.kcibald.services.fronting.controllers.MasterConfigSpec.Authentication
 import com.kcibald.services.fronting.objs.entries.FancyEntry
 import com.kcibald.services.fronting.objs.entries.Path
 import com.kcibald.services.fronting.objs.entries.UnsafeHTMLContentEntry
-import com.kcibald.services.fronting.objs.responses.EmptyResponse
-import com.kcibald.services.fronting.objs.responses.InternalErrorResponse
-import com.kcibald.services.fronting.objs.responses.JsonResponse
-import com.kcibald.services.fronting.objs.responses.Response
+import com.kcibald.services.fronting.objs.responses.*
+import com.kcibald.services.fronting.objs.responses.bouns.CookieAddingResponseBonus
+import com.kcibald.services.fronting.objs.responses.bouns.HeaderAddingResponseBonus
+import com.kcibald.services.fronting.objs.responses.bouns.StatusResponseBonus
 import com.kcibald.services.fronting.utils.*
 import com.kcibald.services.user.AuthenticationClient
 import com.kcibald.services.user.AuthenticationResult
@@ -27,6 +27,8 @@ import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.jsonObjectOf
 import io.vertx.kotlin.core.json.obj
 import io.vertx.kotlin.ext.jwt.jwtOptionsOf
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
 import org.apache.commons.validator.routines.EmailValidator
 import java.io.IOException
 import java.util.concurrent.TimeUnit
@@ -39,6 +41,7 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
     private lateinit var authenticationClient: AuthenticationClient
     private lateinit var jwtAuthProvider: JWTAuth
     private var recaptchaClient: RecaptchaClient? = null
+    private lateinit var COOKIE_DOMAIN: String
 
     override fun routeAPIEndpoint(router: Router, sharedObjects: SharedObjects) {
         val vertx = VertxHelper.currentVertx()
@@ -48,6 +51,7 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
 
         logger.d { "Initializing Login API Route mounting" }
         this.COOKIE_KEY = config[Authentication.CookieKey]
+        this.COOKIE_DOMAIN = config[Authentication.CookieDomain]
         this.authenticationClient = sharedObjects.getService("auth") {
             AuthenticationClient.createDefault(vertx)
         }
@@ -69,12 +73,8 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
     private val emailValidator = EmailValidator.getInstance()
     private val passwordPattern = Pattern.compile("^(?=.*?[a-z])(?=.*?[0-9]).{8,20}\$")
 
-    private suspend fun handleEvent(context: RoutingContext): Response {
-        val requestObj = context.jsonObject
-
-        val accountEmail: String = requestObj["account"] ?: incompleteRequest()
-        val password: String = requestObj["password"] ?: incompleteRequest()
-
+    private suspend fun handleEvent(context: RoutingContext): TerminateResponse {
+        val (accountEmail: String, password: String, captcha: String?) = extractFields(context.jsonObject)
         logger.d { "account: $accountEmail attempts to login" }
 
         if (!checkArguments(accountEmail, password)) {
@@ -82,80 +82,86 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
             return passwordOrAccountEmailIncorrectResponse
         }
 
-        val captchaResult = checkRecaptchaIfEnabled(requestObj)
-        logger.d { "recaptcha checking for account: $accountEmail, is $captchaResult" }
-        if (captchaResult == RecaptchaResponse.VERIFIED_INVALID) {
-            return passwordOrAccountEmailIncorrectResponse
-        }
+        val captchaResultAsync = checkRecaptchaIfEnabledAsync(captcha)
+        val verification = authenticationClient.verifyCredential(accountEmail, password)
 
-        return verifyCredit(accountEmail, password, captchaResult, context)
+        return compileResult(accountEmail, verification, captchaResultAsync.await())
     }
 
-    private suspend fun verifyCredit(
-        accountEmail: String,
-        password: String,
-        captchaResult: RecaptchaResponse,
-        context: RoutingContext
-    ): Response =
-        when (val verification = authenticationClient.verifyCredential(accountEmail, password)) {
-            is AuthenticationResult.InvalidCredential, is AuthenticationResult.UserNotFound ->
-                invalidCredentialResponse(accountEmail)
-            is AuthenticationResult.Banned ->
-                bannedFailureResponse(verification)
-            is AuthenticationResult.Success ->
-                successResponse(captchaResult, verification.user, accountEmail, context)
-            is AuthenticationResult.SystemError ->
-                systemErrorResponse(verification)
-        }
+    private fun extractFields(requestObj: JsonObject): Triple<String, String, String?> {
+        val accountEmail: String = requestObj["account"] ?: incompleteRequest()
+        val password: String = requestObj["password"] ?: incompleteRequest()
+        val captcha: String? = requestObj["captcha"]
+        return Triple(accountEmail, password, captcha)
+    }
 
-    private fun invalidCredentialResponse(accountEmail: String): Response {
+    private fun compileResult(
+        accountEmail: String,
+        verification: AuthenticationResult,
+        captchaResult: RecaptchaResponse
+    ): TerminateResponse = when (val compiledVerification = joinVerification(captchaResult, verification)) {
+        is AuthenticationResult.InvalidCredential, is AuthenticationResult.UserNotFound ->
+            invalidCredentialResponse(accountEmail)
+        is AuthenticationResult.Banned ->
+            bannedFailureResponse(compiledVerification)
+        is AuthenticationResult.Success ->
+            successResponse(compiledVerification.user, captchaResult)
+        is AuthenticationResult.SystemError ->
+            systemErrorResponse(compiledVerification)
+    }
+
+    private fun joinVerification(
+        captchaResult: RecaptchaResponse,
+        verification: AuthenticationResult
+    ): AuthenticationResult {
+        return if (captchaResult == RecaptchaResponse.VERIFIED_INVALID)
+            AuthenticationResult.InvalidCredential
+        else
+            verification
+    }
+
+    private fun invalidCredentialResponse(accountEmail: String): TerminateResponse {
         logger.d { "user $accountEmail was not found" }
         return passwordOrAccountEmailIncorrectResponse
     }
 
-    private fun systemErrorResponse(verification: AuthenticationResult.SystemError): InternalErrorResponse {
+    private fun systemErrorResponse(verification: AuthenticationResult.SystemError): TerminateResponse {
         logger.w { "received system error from upstream service: authentication, message ${verification.message}" }
         return InternalErrorResponse
     }
 
     private fun successResponse(
-        captchaResult: RecaptchaResponse,
         user: User,
-        accountEmail: String,
-        context: RoutingContext
-    ): EmptyResponse {
-        val cookie = makeCookie(captchaResult, user, accountEmail)
-        context.addCookie(cookie)
-
+        captchaResult: RecaptchaResponse
+    ): TerminateResponse {
+        val cookie = makeCookie(captchaResult, user)
         logger.debug("account: ${user.urlKey} successfully logged in")
-        return EmptyResponse
+        return CookieAddingResponseBonus(cookie) + EmptyTerminationResponse
     }
 
     private fun makeCookie(
         captchaResult: RecaptchaResponse,
-        user: User,
-        accountEmail: String
+        user: User
     ): Cookie {
-        val expireInMinutes = calcuateExpireInMinutes(captchaResult)
+        val expireInMinutes = calculateExpireInMinutes(captchaResult)
 
-        val token = generateJwtToken(user, accountEmail, expireInMinutes)
+        val token = generateJwtToken(user, expireInMinutes)
 
         val cookie = Cookie.cookie(COOKIE_KEY, token)
         cookie.setSecure(true)
         cookie.setMaxAge(TimeUnit.MINUTES.toSeconds(expireInMinutes.toLong()))
-        cookie.domain = "kcibald.com"
+        cookie.domain = COOKIE_DOMAIN
 
         return cookie
     }
 
     private fun generateJwtToken(
         user: User,
-        accountEmail: String,
         expireInMinutes: Int
     ): String = jwtAuthProvider.generateToken(
         generateClaimsForUser(user),
         jwtOptionsOf(
-            audience = listOf(user.urlKey, user.userName, accountEmail),
+            audience = listOf(user.urlKey),
             expiresInMinutes = expireInMinutes,
             issuer = "kcibald-frontend"
         )
@@ -169,19 +175,17 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
         )
     }
 
-    private fun calcuateExpireInMinutes(captchaResult: RecaptchaResponse): Int {
-        val expireInMinutes =
-            if (captchaResult == RecaptchaResponse.VERIFICATION_FAILED)
-                5
-            else
-                TimeUnit.DAYS.toMinutes(30).toInt()
-        return expireInMinutes
+    private fun calculateExpireInMinutes(captchaResult: RecaptchaResponse): Int {
+        if (captchaResult == RecaptchaResponse.VERIFICATION_FAILED)
+            return 5
+        else
+            return TimeUnit.DAYS.toMinutes(30).toInt()
     }
 
     private fun checkArguments(account: String, password: String) =
         emailValidator.isValid(account) && passwordPattern.matcher(password).matches()
 
-    private fun bannedFailureResponse(result: AuthenticationResult.Banned): Response {
+    private fun bannedFailureResponse(result: AuthenticationResult.Banned): TerminateResponse {
         val timeToUnban = if (result.duration < 0) -1 else result.timeBanned + result.duration
 
         val body = json {
@@ -195,56 +199,56 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
             )
         }
 
-        return JsonResponse(body, 403, "WWW-Authenticate" to "FormBased")
+        return StatusResponseBonus(403)
+            .plus(HeaderAddingResponseBonus("WWW-Authenticate" to "FormBased"))
+            .plus(JsonResponse(body))
     }
 
-    private val passwordOrAccountEmailIncorrectResponse = JsonResponse(
-        jsonObjectOf(
-            "success" to false,
-            "type" to "PASSWORD_OR_USERNAME_INCORRECT"
-        )
-        ,
-        403,
-        "WWW-Authenticate" to "FormBased"
-    )
-
-    private val captchaVerificationFailedResponse = JsonResponse(
-        jsonObjectOf(
-            "success" to false,
-            "type" to "CAPTCHA_VERIFICATION_FAILED"
-        )
-        ,
-        401,
-        "WWW-Authenticate" to "FormBased"
-    )
+    private val passwordOrAccountEmailIncorrectResponse =
+        StatusResponseBonus(403)
+            .plus(HeaderAddingResponseBonus("WWW-Authenticate" to "FormBased"))
+            .plus(
+                JsonResponse(
+                    jsonObjectOf(
+                        "success" to false,
+                        "type" to "PASSWORD_OR_USERNAME_INCORRECT"
+                    )
+                )
+            )
 
     private const val maximumRecaptchaTrial = 2
-
-    private suspend fun checkRecaptchaIfEnabled(requestObj: JsonObject): RecaptchaResponse {
+    private fun checkRecaptchaIfEnabledAsync(recaptchaToken: String?): Deferred<RecaptchaResponse> {
         val reclient = recaptchaClient
 
         if (reclient == null) {
-            logger.warn("recaptcha checking has been disabled, THIS IS NOT SUITABLE FOR PRODUCTION")
-            return RecaptchaResponse.VERIFIED_PASS
+            logger.w { "recaptcha checking has been disabled, THIS IS NOT SUITABLE FOR PRODUCTION" }
+            return CompletableDeferred(RecaptchaResponse.VERIFIED_PASS)
         }
-
-        val recaptchaToken: String = requestObj["captcha"] ?: incompleteRequest()
+        recaptchaToken ?: incompleteRequest()
         logger.d { "checking recaptcha $recaptchaToken" }
-        for (retryCount in 1..maximumRecaptchaTrial) {
-            try {
+        return runWithVertxCorutinueAsync {
+            for (retryCount in 1..maximumRecaptchaTrial) {
+                try {
 //                it is not blocking call
-                @Suppress("BlockingMethodInNonBlockingContext")
-                return if (reclient.verify(recaptchaToken)) {
-                    RecaptchaResponse.VERIFIED_PASS
-                } else {
-                    RecaptchaResponse.VERIFIED_INVALID
+                    val operationName = "recaptcha check"
+                    @Suppress("BlockingMethodInNonBlockingContext")
+                    if (withProcessTimeMonitoring(logger, operationName) { reclient.verify(recaptchaToken) }) {
+                        logger.d { "recaptcha verified with ${RecaptchaResponse.VERIFIED_PASS}" }
+                        return@runWithVertxCorutinueAsync RecaptchaResponse.VERIFIED_PASS
+                    } else {
+                        logger.d { "recaptcha verified with ${RecaptchaResponse.VERIFIED_PASS}" }
+                        return@runWithVertxCorutinueAsync RecaptchaResponse.VERIFIED_INVALID
+                    }
+                } catch (e: IOException) {
+                    logger.i(e) { "IOException when validating recaptcha! $e" }
                 }
-            } catch (e: IOException) {
-                logger.info("IOException when validating recaptcha! $e", e)
             }
+            logger.w {
+                "recaptcha validation failed after $maximumRecaptchaTrial retries, " +
+                        "return ${RecaptchaResponse.VERIFICATION_FAILED}"
+            }
+            return@runWithVertxCorutinueAsync RecaptchaResponse.VERIFICATION_FAILED
         }
-        logger.warn("recaptcha validation failed after $maximumRecaptchaTrial retries")
-        return RecaptchaResponse.VERIFICATION_FAILED
     }
 
     private enum class RecaptchaResponse {

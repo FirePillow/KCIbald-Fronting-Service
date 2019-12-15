@@ -13,5 +13,8 @@
         }
       ]
     }
+  },
+  "misc_file": {
+    "favicon_redirect_url": "https://cdn.jsdelivr.net/gh/FirePillow/KCIbald@0.0.3/dist/assets/favicon.ico"
   }
 }

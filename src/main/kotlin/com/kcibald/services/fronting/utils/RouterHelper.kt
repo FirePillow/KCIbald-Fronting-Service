@@ -2,6 +2,7 @@ package com.kcibald.services.fronting.utils
 
 import com.kcibald.services.fronting.handlers.AuthorizationHandler
 import com.kcibald.services.fronting.objs.responses.*
+import com.kcibald.services.fronting.objs.responses.bouns.StatusResponseBonus
 import com.kcibald.utils.d
 import com.kcibald.utils.t
 import com.kcibald.utils.w
@@ -54,10 +55,10 @@ private val authenticationRejectJson: JsonObject = jsonObjectOf(
 
 object StandardAuthenticationRejectResponse {
     val PAGE = RedirectResponse("/login")
-    val API = JsonResponse(authenticationRejectJson, 401)
+    val API = StatusResponseBonus(401) + JsonResponse(authenticationRejectJson)
 }
 
-fun Route.authenticated(rejectResponse: Response, config: Config, authProvider: JWTAuth): Route {
+fun Route.authenticated(rejectResponse: TerminateResponse, config: Config, authProvider: JWTAuth): Route {
     val authorizationHandler = AuthorizationHandler(rejectResponse, config, authProvider)
     this.handler(authorizationHandler)
     return this
@@ -67,14 +68,14 @@ fun Route.authenticated(rejectResponse: Response, config: Config, authProvider: 
 //for possible interpretation and better chaining
 inline fun RoutingContext.responseWith(_responses: Response) = _responses.apply(this.response())
 
-fun Route.coreHandler(core: (RoutingContext) -> Response) = this.handler {
+fun Route.coreHandler(core: (RoutingContext) -> TerminateResponse) = this.handler {
     val result = runCatching { core(it) }
     val response = normalize(result)
     it.responseWith(response)
 }!!
 
-fun Route.coroutineCoreHandler(core: suspend (RoutingContext) -> Response) = handler {
-    launchVertxCorutinue(it.vertx()) {
+fun Route.coroutineCoreHandler(core: suspend (RoutingContext) -> TerminateResponse) = handler {
+    launchWithVertxCorutinue(it.vertx()) {
         logger.t { "Accepted and start processing request through $core, request: ${it.request()}" }
         val result = runCatching { core(it) }
         val response = normalize(result)
@@ -83,7 +84,7 @@ fun Route.coroutineCoreHandler(core: suspend (RoutingContext) -> Response) = han
     }
 }!!
 
-private fun normalize(result: Result<Response>): Response {
+private fun normalize(result: Result<TerminateResponse>): TerminateResponse {
     if (result.isSuccess) {
         logger.t { "handler is success, normalize as is" }
         return result.getOrNull()!!
