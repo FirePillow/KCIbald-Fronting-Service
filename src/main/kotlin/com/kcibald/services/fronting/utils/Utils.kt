@@ -60,3 +60,10 @@ internal inline fun <OUT> withProcessTimeMonitoring(logger: Logger, operationNam
         }
     }
 }
+
+internal inline fun <OUT> withProcessTimeRecording(block: () -> OUT): Pair<Result<OUT>, Long> {
+    val tStart = System.currentTimeMillis()
+    val result = runCatching(block)
+    val tTaken = System.currentTimeMillis() - tStart
+    return result to tTaken
+}
