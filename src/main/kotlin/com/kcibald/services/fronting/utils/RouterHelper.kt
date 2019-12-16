@@ -69,18 +69,28 @@ fun Route.authenticated(rejectResponse: TerminateResponse, config: Config, authP
 inline fun RoutingContext.responseWith(_responses: Response) = _responses.apply(this.response())
 
 fun Route.coreHandler(core: (RoutingContext) -> TerminateResponse) = this.handler {
-    val result = runCatching { core(it) }
-    val response = normalize(result)
-    it.responseWith(response)
-}!!
-
-fun Route.coroutineCoreHandler(core: suspend (RoutingContext) -> TerminateResponse) = handler {
-    launchWithVertxCorutinue(it.vertx()) {
+    val (_, time) = withProcessTimeRecording {
         logger.t { "Accepted and start processing request through $core, request: ${it.request()}" }
         val result = runCatching { core(it) }
         val response = normalize(result)
         logger.t { "normalized result as $response" }
         it.responseWith(response)
+    }
+    logger.d { "core handling took $time" }
+    it.response().putHeader("X-Time", time.toString())
+}!!
+
+fun Route.coroutineCoreHandler(core: suspend (RoutingContext) -> TerminateResponse) = handler {
+    launchWithVertxCorutinue(it.vertx()) {
+        val (_, time) = withProcessTimeRecording {
+            logger.t { "Accepted and start processing request through $core(coroutine), request: ${it.request()}" }
+            val result = runCatching { core(it) }
+            val response = normalize(result)
+            logger.t { "normalized result as $response" }
+            it.responseWith(response)
+        }
+        logger.d { "core handling took $time" }
+        it.response().putHeader("X-Time", time.toString())
     }
 }!!
 
