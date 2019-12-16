@@ -13,9 +13,9 @@ object MasterConfigSpec : ConfigSpec("") {
         val CookieDomain by optional(".kcibald.com", "cookie_domain")
     }
 
-    val CorsDomainPattern by optional(".*\\.kcibald.com\$", "cors domain matching")
+    val CorsDomainPattern by optional(".*\\.kcibald.com\$", "cors_domain", "cors domain matching")
 
-    object MiscFiles: ConfigSpec("misc_file") {
+    object MiscFiles : ConfigSpec("misc_file") {
         val FaviconRedirectURL by optional("", "favicon_redirect_url")
         val FaviconFilePath by optional(
             "static/misc/favicon.ico",
