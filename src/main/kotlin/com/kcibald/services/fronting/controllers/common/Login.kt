@@ -82,10 +82,15 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
             return passwordOrAccountEmailIncorrectResponse
         }
 
-        val captchaResultAsync = checkRecaptchaIfEnabledAsync(captcha)
-        val verification = authenticationClient.verifyCredential(accountEmail, password)
+        val captchaResultWithTimeAsync = checkRecaptchaAndRecordPerfIfEnabledAsync(captcha)
+        val (verificationPacked, authTime) = withProcessTimeRecording {
+            authenticationClient.verifyCredential(accountEmail, password)
+        }
 
-        return compileResult(accountEmail, verification, captchaResultAsync.await())
+        val (captchaResult, captchaTime) = captchaResultWithTimeAsync.await()
+        return HeaderAddingResponseBonus("X-Captcha-Time" to captchaTime.toString())
+            .plus(HeaderAddingResponseBonus("X-Auth-Time" to authTime.toString()))
+            .plus(compileResult(accountEmail, verificationPacked.getOrThrow(), captchaResult))
     }
 
     private fun extractFields(requestObj: JsonObject): Triple<String, String, String?> {
@@ -217,38 +222,48 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
             )
 
     private const val maximumRecaptchaTrial = 2
-    private fun checkRecaptchaIfEnabledAsync(recaptchaToken: String?): Deferred<RecaptchaResponse> {
-        val reclient = recaptchaClient
+    private fun checkRecaptchaAndRecordPerfIfEnabledAsync(recaptchaToken: String?): Deferred<Pair<RecaptchaResponse, Long>> {
+        val reClient = recaptchaClient
 
-        if (reclient == null) {
+        if (reClient == null) {
             logger.w { "recaptcha checking has been disabled, THIS IS NOT SUITABLE FOR PRODUCTION" }
-            return CompletableDeferred(RecaptchaResponse.VERIFIED_PASS)
+            return CompletableDeferred(RecaptchaResponse.VERIFIED_PASS to 0.toLong())
         }
         recaptchaToken ?: incompleteRequest()
         logger.d { "checking recaptcha $recaptchaToken" }
         return runWithVertxCorutinueAsync {
-            for (retryCount in 1..maximumRecaptchaTrial) {
-                try {
-//                it is not blocking call
-                    val operationName = "recaptcha check"
-                    @Suppress("BlockingMethodInNonBlockingContext")
-                    if (withProcessTimeMonitoring(logger, operationName) { reclient.verify(recaptchaToken) }) {
-                        logger.d { "recaptcha verified with ${RecaptchaResponse.VERIFIED_PASS}" }
-                        return@runWithVertxCorutinueAsync RecaptchaResponse.VERIFIED_PASS
-                    } else {
-                        logger.d { "recaptcha verified with ${RecaptchaResponse.VERIFIED_PASS}" }
-                        return@runWithVertxCorutinueAsync RecaptchaResponse.VERIFIED_INVALID
-                    }
-                } catch (e: IOException) {
-                    logger.i(e) { "IOException when validating recaptcha! $e" }
-                }
+            val (recaptchaResultPacked, time) = withProcessTimeRecording {
+                doFetchRecaptchaResult(reClient, recaptchaToken)
             }
-            logger.w {
-                "recaptcha validation failed after $maximumRecaptchaTrial retries, " +
-                        "return ${RecaptchaResponse.VERIFICATION_FAILED}"
-            }
-            return@runWithVertxCorutinueAsync RecaptchaResponse.VERIFICATION_FAILED
+            recaptchaResultPacked.getOrThrow() to time
         }
+    }
+
+    private suspend fun doFetchRecaptchaResult(
+        reClient: RecaptchaClient,
+        recaptchaToken: String
+    ): RecaptchaResponse {
+        for (retryCount in 1..maximumRecaptchaTrial) {
+            try {
+                //                it is not blocking call
+                val operationName = "recaptcha check single"
+                @Suppress("BlockingMethodInNonBlockingContext")
+                if (withProcessTimeMonitoring(logger, operationName) { reClient.verify(recaptchaToken) }) {
+                    logger.d { "recaptcha verified with ${RecaptchaResponse.VERIFIED_PASS}" }
+                    return RecaptchaResponse.VERIFIED_PASS
+                } else {
+                    logger.d { "recaptcha verified with ${RecaptchaResponse.VERIFIED_PASS}" }
+                    return RecaptchaResponse.VERIFIED_INVALID
+                }
+            } catch (e: IOException) {
+                logger.i(e) { "IOException when validating recaptcha! $e" }
+            }
+        }
+        logger.w {
+            "recaptcha validation failed after $maximumRecaptchaTrial retries, " +
+                    "return ${RecaptchaResponse.VERIFICATION_FAILED}"
+        }
+        return RecaptchaResponse.VERIFICATION_FAILED
     }
 
     private enum class RecaptchaResponse {
