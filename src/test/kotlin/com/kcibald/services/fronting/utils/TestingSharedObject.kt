@@ -19,3 +19,12 @@ internal abstract class TestingSharedObject : SharedObjects {
     override fun checkServiceClientOverride(serviceName: String): ServiceClient? = fail()
     override fun checkHandlerIntercept(handlerName: String): Handler<RoutingContext>? = fail()
 }
+
+internal abstract class NoAuthTestingSharedObject : TestingSharedObject() {
+    override fun checkHandlerIntercept(handlerName: String): Handler<RoutingContext>? {
+        if (handlerName == "auth") {
+            return Handler { it.next() }
+        }
+        return fail()
+    }
+}
