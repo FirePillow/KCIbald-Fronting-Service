@@ -35,7 +35,7 @@ object DescribeUserAPI : APIEntry {
     ) {
         router
             .get("/u/:userKey/")
-            .authenticated(StandardAuthenticationRejectResponse.API, sharedObjects.config, sharedObjects.jwtAuth)
+            .authenticated(StandardAuthenticationRejectResponse.API, sharedObjects)
             .produces(ContentTypes.JSON)
             .coroutineCoreHandler(::handleEvent)
         logger.i { "Registries /u/:userKey/ to router $router" }
@@ -47,7 +47,7 @@ object DescribeUserAPI : APIEntry {
     ) {
         router
             .get("/me/")
-            .authenticated(StandardAuthenticationRejectResponse.API, sharedObjects.config, sharedObjects.jwtAuth)
+            .authenticated(StandardAuthenticationRejectResponse.API, sharedObjects)
             .produces(ContentTypes.JSON)
             .handler {
                 val targetPath = "/u/${it.userUrlKey}"

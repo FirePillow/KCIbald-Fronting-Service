@@ -7,10 +7,8 @@ import com.kcibald.services.fronting.objs.responses.bouns.StatusResponseBonus
 import com.kcibald.utils.d
 import com.kcibald.utils.t
 import com.kcibald.utils.w
-import com.uchuhimo.konf.Config
 import io.vertx.core.json.JsonObject
 import io.vertx.core.logging.LoggerFactory
-import io.vertx.ext.auth.jwt.JWTAuth
 import io.vertx.ext.web.Route
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.handler.BodyHandler
@@ -59,8 +57,11 @@ object StandardAuthenticationRejectResponse {
     val API = StatusResponseBonus(401) + JsonResponse(authenticationRejectJson)
 }
 
-fun Route.authenticated(rejectResponse: TerminateResponse, config: Config, authProvider: JWTAuth): Route {
-    val authorizationHandler = AuthorizationHandler(rejectResponse, config, authProvider)
+fun Route.authenticated(
+    rejectResponse: TerminateResponse,
+    sharedObjects: SharedObjects = VertxHelper.sharedObject()
+): Route {
+    val authorizationHandler = AuthorizationHandler(rejectResponse, sharedObjects.config, sharedObjects.jwtAuth)
     this.handler(authorizationHandler)
     return this
 }

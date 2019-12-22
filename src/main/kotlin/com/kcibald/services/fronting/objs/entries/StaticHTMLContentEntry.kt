@@ -24,6 +24,7 @@ abstract class UnsafeHTMLContentEntry : StaticHTMLContentEntry() {
                 .handler(genericStaticHandler)
         }
     }
+
     companion object {
         private val logger = LoggerFactory.getLogger(UnsafeHTMLContentEntry::class.java)
     }
@@ -37,10 +38,11 @@ abstract class StandardStaticHTMLContentEntry : StaticHTMLContentEntry() {
             router
                 .get(p)
                 .produces(ContentTypes.HTML)
-                .authenticated(StandardAuthenticationRejectResponse.PAGE, sharedObjects.config, sharedObjects.jwtAuth)
+                .authenticated(StandardAuthenticationRejectResponse.PAGE, sharedObjects)
                 .handler(genericStaticHandler)
         }
     }
+
     companion object {
         private val logger = LoggerFactory.getLogger(StandardStaticHTMLContentEntry::class.java)
     }
