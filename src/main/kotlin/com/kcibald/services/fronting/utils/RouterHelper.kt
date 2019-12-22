@@ -61,7 +61,9 @@ fun Route.authenticated(
     rejectResponse: TerminateResponse,
     sharedObjects: SharedObjects = VertxHelper.sharedObject()
 ): Route {
-    val authorizationHandler = AuthorizationHandler(rejectResponse, sharedObjects.config, sharedObjects.jwtAuth)
+    val authorizationHandler = sharedObjects.getHandler("auth") {
+        AuthorizationHandler(rejectResponse, sharedObjects.config, sharedObjects.jwtAuth)
+    }
     this.handler(authorizationHandler)
     return this
 }

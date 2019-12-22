@@ -15,10 +15,6 @@ import io.vertx.ext.jwt.JWTOptions
 import io.vertx.ext.web.Router
 import io.vertx.junit5.VertxExtension
 import io.vertx.kotlin.core.json.jsonObjectOf
-import io.vertx.kotlin.coroutines.dispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.fail
@@ -214,6 +210,4 @@ internal class LoginAPITest : HttpAPITestBase() {
         )
     }
 
-    fun runVertxCoroutinueContext(vertx: Vertx, block: suspend CoroutineScope.() -> Unit) =
-        runBlocking { GlobalScope.async(vertx.dispatcher(), block = block).await() }
 }

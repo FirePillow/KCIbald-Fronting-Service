@@ -1,6 +1,12 @@
 package com.kcibald.services.fronting.utils
 
+import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
+import io.vertx.kotlin.coroutines.dispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.charset.Charset
@@ -21,3 +27,6 @@ internal object JsonBodyHandler : HttpResponse.BodyHandler<JsonObject> {
     }
 
 }
+
+fun runVertxCoroutinueContext(vertx: Vertx, block: suspend CoroutineScope.() -> Unit) =
+    runBlocking { GlobalScope.async(vertx.dispatcher(), block = block).await() }
