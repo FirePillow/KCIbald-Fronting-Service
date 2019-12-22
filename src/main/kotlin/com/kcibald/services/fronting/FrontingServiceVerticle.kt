@@ -6,6 +6,7 @@ import com.kcibald.services.ServiceClient
 import com.kcibald.services.fronting.controllers.MasterConfigSpec
 import com.kcibald.services.fronting.controllers.common.CommonAPIRouter
 import com.kcibald.services.fronting.controllers.misc.MiscRouter
+import com.kcibald.services.fronting.controllers.post.PostRouter
 import com.kcibald.services.fronting.controllers.user.UserAPIRouter
 import com.kcibald.services.fronting.objs.entries.GroupingRouter
 import com.kcibald.services.fronting.utils.RequestIDHandler
@@ -94,7 +95,8 @@ object FrontingServiceVerticle : CoroutineVerticle() {
     private fun generateGroups(): List<GroupingRouter> = listOf(
         CommonAPIRouter,
         UserAPIRouter,
-        MiscRouter
+        MiscRouter,
+        PostRouter
     )
 
     private fun routeAPIEndpoint(

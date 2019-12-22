@@ -22,7 +22,7 @@ object Logout : FancyEntry {
 //        there is cookie handler attached when .authenticated handler is used
         router
             .post("/logout")
-            .authenticated(StandardAuthenticationRejectResponse.API, sharedObjects.config, sharedObjects.jwtAuth)
+            .authenticated(StandardAuthenticationRejectResponse.API, sharedObjects)
             .coreHandler {
                 clearCookie(cookieKey, it)
                 EmptyTerminationResponse
@@ -39,7 +39,7 @@ object Logout : FancyEntry {
         router
             .get("/logout")
             .produces(ContentTypes.HTML)
-            .authenticated(StandardAuthenticationRejectResponse.PAGE, sharedObjects.config, sharedObjects.jwtAuth)
+            .authenticated(StandardAuthenticationRejectResponse.PAGE, sharedObjects)
             .coreHandler {
                 clearCookie(cookieKey, it)
                 RedirectResponse(redirectURL)

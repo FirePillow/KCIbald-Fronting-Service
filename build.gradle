@@ -33,7 +33,7 @@ dependencies {
     implementation 'io.github.tsegismont:vertx-contextual-logging:1.0.0-alpha2'
 
     implementation 'com.github.wusatosi:kotlin-recaptcha-client:7b89048b41'
-    implementation 'com.github.FirePillow:KCIbald-shared-obj:5f982779fa'
+    implementation 'com.github.FirePillow:KCIbald-shared-obj:0915a97a99'
 
     compile 'commons-validator:commons-validator:1.6'
 

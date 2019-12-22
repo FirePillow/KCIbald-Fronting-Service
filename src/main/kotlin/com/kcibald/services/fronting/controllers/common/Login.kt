@@ -8,6 +8,7 @@ import com.kcibald.services.fronting.objs.entries.UnsafeHTMLContentEntry
 import com.kcibald.services.fronting.objs.responses.*
 import com.kcibald.services.fronting.objs.responses.bouns.CookieAddingResponseBonus
 import com.kcibald.services.fronting.objs.responses.bouns.HeaderAddingResponseBonus
+import com.kcibald.services.fronting.objs.responses.bouns.ResponseTimeHeaderBonus
 import com.kcibald.services.fronting.objs.responses.bouns.StatusResponseBonus
 import com.kcibald.services.fronting.utils.*
 import com.kcibald.services.user.AuthenticationClient
@@ -88,8 +89,8 @@ object Login : UnsafeHTMLContentEntry(), FancyEntry {
         }
 
         val (captchaResult, captchaTime) = captchaResultWithTimeAsync.await()
-        return HeaderAddingResponseBonus("X-Captcha-Time" to captchaTime.toString())
-            .plus(HeaderAddingResponseBonus("X-Auth-Time" to authTime.toString()))
+        return ResponseTimeHeaderBonus.fromNameAndTime("captcha", captchaTime)
+            .plus(ResponseTimeHeaderBonus.fromNameAndTime("Auth", authTime))
             .plus(compileResult(accountEmail, verificationPacked.getOrThrow(), captchaResult))
     }
 

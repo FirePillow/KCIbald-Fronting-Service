@@ -2,7 +2,7 @@ package com.kcibald.services.fronting.objs.responses
 
 import io.vertx.core.http.HttpServerResponse
 
-class CombinedResponse(
+data class CombinedResponse(
     private val first: Response,
     private val second: Response
 ) : Response {
@@ -16,7 +16,7 @@ class CombinedResponse(
 operator fun Response.plus(other: Response) = CombinedResponse(this, other)
 operator fun Response.plus(other: TerminateResponse) = CombinedTerminateResponse(this, other)
 
-class CombinedTerminateResponse(
+data class CombinedTerminateResponse(
     private val first: Response,
     private val second: TerminateResponse
 ) : TerminateResponse {
