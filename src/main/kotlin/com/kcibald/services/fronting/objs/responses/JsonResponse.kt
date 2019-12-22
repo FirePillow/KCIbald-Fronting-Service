@@ -6,12 +6,11 @@ import io.vertx.core.buffer.Buffer
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.core.json.JsonObject
 
-open class JsonResponse(
-    response: JsonObject
+data class JsonResponse(
+    private val response: JsonObject
 ) : TerminateResponse {
-    private val payload = Buffer.buffer(response.formatToString())
     override fun apply(response: HttpServerResponse) {
         response.putHeader("Content-Type", ContentTypes.JSON)
-        response.end(payload)
+        response.end(Buffer.buffer(this.response.formatToString()))
     }
 }

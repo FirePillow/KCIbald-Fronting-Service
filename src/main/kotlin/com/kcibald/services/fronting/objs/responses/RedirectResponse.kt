@@ -2,7 +2,8 @@ package com.kcibald.services.fronting.objs.responses
 
 import io.vertx.core.http.HttpServerResponse
 
-class RedirectResponse private constructor(
+@Suppress("DataClassPrivateConstructor")
+data class RedirectResponse private constructor(
     private val url: String,
     private val status: Int
 ) : TerminateResponse {

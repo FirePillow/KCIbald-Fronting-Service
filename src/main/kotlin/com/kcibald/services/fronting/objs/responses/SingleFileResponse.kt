@@ -3,7 +3,7 @@ package com.kcibald.services.fronting.objs.responses
 import io.vertx.core.http.HttpServerResponse
 import java.util.concurrent.TimeUnit
 
-class SingleFileResponse(
+data class SingleFileResponse(
     private val filePath: String,
     private val maxAgeInSeconds: Long = TimeUnit.DAYS.toSeconds(1)
 ) : TerminateResponse {
