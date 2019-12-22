@@ -2,6 +2,7 @@ package com.kcibald.services.fronting.utils
 
 import com.kcibald.services.fronting.handlers.AuthorizationHandler
 import com.kcibald.services.fronting.objs.responses.*
+import com.kcibald.services.fronting.objs.responses.bouns.ResponseTimeHeaderBonus
 import com.kcibald.services.fronting.objs.responses.bouns.StatusResponseBonus
 import com.kcibald.utils.d
 import com.kcibald.utils.t
@@ -82,15 +83,14 @@ fun Route.coreHandler(core: (RoutingContext) -> TerminateResponse) = this.handle
 
 fun Route.coroutineCoreHandler(core: suspend (RoutingContext) -> TerminateResponse) = handler {
     launchWithVertxCorutinue(it.vertx()) {
-        val (_, time) = withProcessTimeRecording {
+        withProcessTimeMonitoring(logger, "core handling") {
             logger.t { "Accepted and start processing request through $core(coroutine), request: ${it.request()}" }
-            val result = runCatching { core(it) }
-            val response = normalize(result)
-            logger.t { "normalized result as $response" }
+            val (result, time) = withProcessTimeRecording { core(it) }
+            val normalized = normalize(result)
+            logger.t { "normalized result as $normalized" }
+            val response = ResponseTimeHeaderBonus.fromNameAndTime("core", time) + normalized
             it.responseWith(response)
         }
-        logger.d { "core handling took $time" }
-        it.response().putHeader("X-Time", time.toString())
     }
 }!!
 
