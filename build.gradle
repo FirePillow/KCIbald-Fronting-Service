@@ -52,7 +52,7 @@ dependencies {
     compile 'com.github.lalyos:jfiglet:0.0.8'
 
 //    config
-    compile 'com.uchuhimo:konf:0.21.0'
+    compile 'com.uchuhimo:konf:0.22.1'
 
 //    test framework
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
