@@ -18,7 +18,7 @@ application {
     mainClassName = 'com.kcibald.services.fronting.Bootstrap'
 }
 
-def vertxVersion = "4.0.0-milestone4"
+def vertxVersion = "4.0.0.Beta1"
 def junitVersion = "5.5.2"
 
 dependencies {
