@@ -35,7 +35,7 @@ dependencies {
     implementation 'com.github.wusatosi:kotlin-recaptcha-client:7b89048b41'
     implementation 'com.github.FirePillow:KCIbald-shared-obj:0915a97a99'
 
-    compile 'commons-validator:commons-validator:1.6'
+    compile 'commons-validator:commons-validator:1.7'
 
     compile "io.vertx:vertx-auth-common:$vertxVersion"
     compile "io.vertx:vertx-auth-jwt:$vertxVersion"
